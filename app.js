@@ -20,6 +20,8 @@ const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustu
 const DAYS = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let currentUser = "";
+const secret = (u, p) => u.trim().toLowerCase() + "\n" + p;
 const vaultData = () => ({ items: state.items, budget: state.budget });
 
 /* ---------- parsing ---------- */
@@ -140,15 +142,15 @@ let idleTimer = null;
 function resetIdle() { clearTimeout(idleTimer); idleTimer = setTimeout(lockNow, IDLE_MS); }
 function showApp() {
   $("lockScreen").hidden = true; $("app").hidden = false;
-  ["pass", "newPass", "newPass2", "restoreLock-pass"].forEach(id => $(id).value = "");
+  ["pass", "newPass", "newPass2", "restoreLock-pass", "restoreLock-user"].forEach(id => $(id).value = "");
   renderChips(); updatePreview(); render(); resetIdle();
 }
 function lockNow() {
-  clearTimeout(idleTimer); Vault.lock();
+  clearTimeout(idleTimer); Vault.lock(); currentUser = "";
   state.items = []; state.budget = { ...DEFAULT_BUDGET };
   $("app").hidden = true; $("lockScreen").hidden = false;
   ["list", "env", "summary", "chart"].forEach(id => $(id).innerHTML = "");
-  ["oldPass", "chPass", "chPass2", "restoreApp-pass"].forEach(id => $(id).value = "");
+  ["oldPass", "chPass", "chPass2", "restoreApp-pass", "restoreApp-user"].forEach(id => $(id).value = "");
   $("changeForm").hidden = true; $("restoreApp").hidden = true; $("secMsg").textContent = "";
   showLockForm();
 }
@@ -156,7 +158,7 @@ function showLockForm() {
   const has = Vault.exists();
   $("setupForm").hidden = has; $("loginForm").hidden = !has;
   $("restoreLock").hidden = true; $("resetPanel").hidden = true;
-  setTimeout(() => (has ? $("pass") : $("newPass")).focus(), 0);
+  setTimeout(() => (has ? ($("user").value ? $("pass") : $("user")) : $("newUser")).focus(), 0);
 }
 function strength(p) {
   let s = 0; if (p.length >= 8) s++; if (p.length >= 12) s++; if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++; if (/\d/.test(p)) s++; if (/[^A-Za-z0-9]/.test(p)) s++;
@@ -181,10 +183,12 @@ $("newPass").addEventListener("input", e => {
 });
 $("setupForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const p = $("newPass").value, err = checkNew(p, $("newPass2").value);
+  const u = $("newUser").value.trim(), p = $("newPass").value;
+  const err = u.length < 3 ? "Nama pengguna minimal 3 karakter." : checkNew(p, $("newPass2").value);
   $("setupErr").textContent = err; if (err) return;
   $("setupErr").textContent = "Mengamankan…";
-  await Vault.create(p, { items: [], budget: { ...DEFAULT_BUDGET } });
+  currentUser = u;
+  await Vault.create(secret(u, p), { items: [], budget: { ...DEFAULT_BUDGET } });
   load({}); $("setupErr").textContent = ""; showApp();
 });
 $("loginForm").addEventListener("submit", async e => {
@@ -192,14 +196,14 @@ $("loginForm").addEventListener("submit", async e => {
   const wait = waitUntil - Date.now();
   if (wait > 0) { $("loginErr").textContent = `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(wait / 1000)} detik.`; return; }
   $("loginBtn").disabled = true; $("loginErr").textContent = "Membuka…";
-  const data = await Vault.unlock($("pass").value);
+  const data = await Vault.unlock(secret($("user").value, $("pass").value));
   $("loginBtn").disabled = false;
   if (!data) {
     fails++; if (fails >= 3) waitUntil = Date.now() + Math.min(300, 15 * 2 ** (fails - 3)) * 1000; saveFails();
-    $("loginErr").textContent = "Kata sandi salah."; $("pass").select(); return;
+    $("loginErr").textContent = "Nama pengguna atau kata sandi salah."; $("pass").select(); return;
   }
   fails = 0; waitUntil = 0; saveFails();
-  $("loginErr").textContent = ""; load(data); showApp();
+  currentUser = $("user").value.trim(); $("loginErr").textContent = ""; load(data); showApp();
 });
 $("forgot").addEventListener("click", () => { $("resetPanel").hidden = !$("resetPanel").hidden; });
 $("resetConfirm").addEventListener("input", e => { $("resetBtn").disabled = e.target.value.trim() !== "HAPUS"; });
@@ -212,9 +216,10 @@ document.querySelectorAll("form.restore").forEach(form => form.addEventListener(
   const file = $(id + "-file").files[0]; if (!file) return;
   let blob; try { blob = JSON.parse(await file.text()); } catch (er) { msg.textContent = "File bukan cadangan Dompetku."; return; }
   msg.textContent = "Membuka cadangan…";
-  const data = await Vault.importBlob(blob, $(id + "-pass").value);
+  const data = await Vault.importBlob(blob, secret($(id + "-user").value, $(id + "-pass").value));
+  if (data) currentUser = $(id + "-user").value.trim();
   $(id + "-pass").value = "";
-  if (!data) { msg.textContent = "Kata sandi salah atau file cadangan rusak."; return; }
+  if (!data) { msg.textContent = "Nama pengguna, kata sandi, atau file cadangan salah."; return; }
   load(data); form.hidden = true; msg.textContent = id === "restoreLock" ? "" : "Cadangan dipulihkan.";
   if (id === "restoreLock") showApp(); else render();
 }));
@@ -231,10 +236,10 @@ $("exportBtn").addEventListener("click", async () => {
 $("changeBtn").addEventListener("click", () => { $("changeForm").hidden = !$("changeForm").hidden; });
 $("changeForm").addEventListener("submit", async e => {
   e.preventDefault();
-  if (!(await Vault.verify($("oldPass").value))) { $("secMsg").textContent = "Kata sandi lama salah."; return; }
+  if (!(await Vault.verify(secret(currentUser, $("oldPass").value)))) { $("secMsg").textContent = "Kata sandi lama salah."; return; }
   const p = $("chPass").value, err = checkNew(p, $("chPass2").value);
   if (err) { $("secMsg").textContent = err; return; }
-  await saving; await Vault.rekey(p, vaultData());
+  await saving; await Vault.rekey(secret(currentUser, p), vaultData());
   ["oldPass", "chPass", "chPass2"].forEach(id => $(id).value = "");
   $("changeForm").hidden = true; $("secMsg").textContent = "Kata sandi diganti.";
 });

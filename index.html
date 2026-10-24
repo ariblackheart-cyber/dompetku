@@ -16,7 +16,8 @@
   <div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div>
 
   <form class="lock" id="setupForm" hidden style="margin:0">
-    <p>Buat kata sandi untuk mengunci catatanmu. Semua data dienkripsi di perangkat ini dengan kata sandi tersebut.</p>
+    <p>Buat akun untuk mengunci catatanmu. Semua data dienkripsi di perangkat ini dengan nama pengguna dan kata sandi tersebut.</p>
+    <div class="field"><label for="newUser">Nama pengguna</label><input id="newUser" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
     <div class="field"><label for="newPass">Kata sandi baru</label><input id="newPass" type="password" autocomplete="new-password" minlength="8" required></div>
     <div class="strength"><i id="strengthBar"></i></div>
     <div class="field"><label for="newPass2">Ulangi kata sandi</label><input id="newPass2" type="password" autocomplete="new-password" required></div>
@@ -28,13 +29,15 @@
 
   <form class="panel restore" id="restoreLock" hidden>
     <div class="field"><label for="restoreLock-file">File cadangan</label><input id="restoreLock-file" type="file" accept=".dompetku,application/json" required></div>
+    <div class="field"><label for="restoreLock-user">Nama pengguna</label><input id="restoreLock-user" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
     <div class="field"><label for="restoreLock-pass">Kata sandi cadangan</label><input id="restoreLock-pass" type="password" autocomplete="current-password" required></div>
     <button class="btn" style="padding:10px">Pulihkan dan masuk</button>
   </form>
   <div class="err" id="unsupported" role="alert"></div>
 
   <form class="lock" id="loginForm" hidden style="margin:0">
-    <p>Masukkan kata sandi untuk membuka catatanmu.</p>
+    <p>Masuk untuk membuka catatanmu.</p>
+    <div class="field"><label for="user">Nama pengguna</label><input id="user" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
     <div class="field"><label for="pass">Kata sandi</label><input id="pass" type="password" autocomplete="current-password" required></div>
     <div class="err" id="loginErr" role="alert"></div>
     <button class="btn" id="loginBtn">Masuk</button>
@@ -92,7 +95,8 @@
     <form class="panel restore" id="restoreApp" hidden style="padding:0;border:0">
       <p class="foot" style="margin:0">Data di perangkat ini akan diganti dengan isi cadangan.</p>
       <div class="field"><label for="restoreApp-file">File cadangan</label><input id="restoreApp-file" type="file" accept=".dompetku,application/json" required></div>
-      <div class="field"><label for="restoreApp-pass">Kata sandi cadangan</label><input id="restoreApp-pass" type="password" autocomplete="current-password" required></div>
+      <div class="field"><label for="restoreApp-user">Nama pengguna</label><input id="restoreApp-user" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+    <div class="field"><label for="restoreApp-pass">Kata sandi cadangan</label><input id="restoreApp-pass" type="password" autocomplete="current-password" required></div>
       <button class="btn" style="padding:10px">Pulihkan</button>
     </form>
     <form class="panel" id="changeForm" hidden style="padding:0;border:0">

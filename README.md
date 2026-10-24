@@ -10,7 +10,7 @@ Web catat pengeluaran pribadi dengan kata sandi dan data terenkripsi.
 - **Grafik harian** dengan garis jatah harian.
 
 ## Keamanan
-- Masuk dengan kata sandi (minimal 8 karakter, harus cukup kuat).
+- Masuk dengan nama pengguna dan kata sandi. Akun dibuat sendiri saat pertama membuka web, tidak ada kata sandi di dalam kode.
 - Semua catatan dienkripsi dengan **AES-GCM 256-bit**. Kuncinya dibuat dari kata sandi lewat **PBKDF2-SHA256 600.000 iterasi** dengan salt acak.
 - Kata sandi tidak disimpan di mana pun. Yang tersimpan di browser hanya data terenkripsi.
 - Terkunci otomatis setelah 5 menit tidak dipakai, dan ada tombol **Kunci sekarang**.
