@@ -1,18 +1,16 @@
 "use strict";
 /* ================= Konfigurasi ================= */
+const OTHER = "Gaya Hidup & Lainnya";
+// Urutan penting: kategori yang lebih spesifik dicek lebih dulu. Kata yang tidak dikenali masuk ke OTHER.
 const CATS = [
-  { k: "Makan", kw: ["makan","kopi","nasi","bakso","mie","sarapan","jajan","snack","minum","teh","gofood","grabfood","ayam","sate","martabak","roti","warung"] },
-  { k: "Transport", kw: ["bensin","parkir","ojek","gojek","grab","tol","bus","kereta","krl","angkot","taksi","pertalite","pertamax","servis"] },
-  { k: "Belanja", kw: ["belanja","sabun","shopee","tokopedia","baju","sepatu","indomaret","alfamart","sayur","beras","minyak","galon","pasar","susu","popok"] },
-  { k: "Cicilan", kw: ["cicilan","angsuran","kredit","kpr","paylater","pay later","leasing","pinjaman","utang","hutang","dp motor","dp mobil"] },
-  { k: "Arisan", kw: ["arisan"] },
-  { k: "Investasi", kw: ["investasi","invest","saham","reksadana","reksa dana","emas","logam mulia","deposito","obligasi","sbn","sukuk","crypto","kripto","bitcoin","tabungan","nabung","dana darurat"] },
-  { k: "Tagihan", kw: ["listrik","pln","token","air","pdam","wifi","internet","pulsa","kuota","kos","sewa","bpjs","asuransi","netflix","spotify","langganan","sekolah","spp"] },
-  { k: "Hiburan", kw: ["nonton","bioskop","game","main","karaoke","konser","jalan","liburan","hadiah","kado"] },
-  { k: "Lainnya", kw: [] }
+  { k: "Dapur & Rumah", kw: ["makan","makan siang","makan malam","sarapan","nasi","lauk","sayur","sayuran","beras","minyak","telur","ayam","ikan","daging","bumbu","gula","garam","susu","roti","buah","galon","gas","elpiji","lpg","sabun","sampo","deterjen","odol","popok","pampers","tisu","belanja","belanjaan","dapur","pasar","indomaret","alfamart","superindo","hypermart","warung","gofood","grabfood","shopeefood","catering","katering"] },
+  { k: "Transport", kw: ["bensin","pertalite","pertamax","solar","parkir","ojek","ojol","gojek","grab","maxim","tol","bus","kereta","krl","angkot","taksi","pesawat","tiket pesawat","servis","service","oli","ban","cuci motor","cuci mobil","bengkel"] },
+  { k: "Tagihan & Cicilan", kw: ["listrik","pln","token","pdam","tagihan air","bayar air","air pdam","telpon","telepon","wifi","internet","indihome","biznet","pulsa","kuota","paket data","kos","kost","sewa","kontrakan","bpjs","asuransi","iuran","spp","sekolah","les","cicilan","angsuran","kredit","kpr","paylater","pay later","leasing","pinjaman","utang","hutang","arisan","netflix","spotify","langganan","youtube premium"] },
+  { k: "Tabungan & Investasi", kw: ["tabungan","nabung","menabung","investasi","invest","saham","reksadana","reksa dana","emas","logam mulia","antam","deposito","obligasi","sbn","sbr","ori","sukuk","crypto","kripto","bitcoin","dana darurat"] },
+  { k: OTHER, kw: [] }
 ];
-const DEFAULT_BUDGET = { Makan: 1500000, Transport: 500000, Belanja: 700000, Cicilan: 0, Arisan: 0, Investasi: 0, Tagihan: 800000, Hiburan: 300000, Lainnya: 200000 };
-const PRESETS = [["Parkir", 2000, "Transport"], ["Kopi", 18000, "Makan"], ["Makan siang", 25000, "Makan"], ["Bensin", 30000, "Transport"]];
+const DEFAULT_BUDGET = { "Dapur & Rumah": 2200000, "Transport": 500000, "Tagihan & Cicilan": 800000, "Tabungan & Investasi": 0, [OTHER]: 500000 };
+const PRESETS = [["Parkir", 2000, "Transport"], ["Kopi", 18000, OTHER], ["Makan siang", 25000, "Dapur & Rumah"], ["Bensin", 30000, "Transport"]];
 const PERSON_COLORS = ["#0e8a72", "#c0567f", "#3d7bd9", "#b7791f", "#7a5cc7", "#6b7a76"];
 const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const DAYS = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
@@ -214,9 +212,11 @@ document.addEventListener("visibilitychange", async () => {
 
 /* ================= Catat & ubah ================= */
 function guessCat(text) {
-  const t = text.toLowerCase();
-  for (const c of CATS) if (c.kw.some(w => t.includes(w))) return c.k;
-  return "Lainnya";
+  const t = " " + text.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ") + " ";
+  // cocokkan per kata utuh, supaya "air" tidak ikut cocok di dalam kata lain
+  const order = [CATS[3], CATS[2], CATS[1], CATS[0]];
+  for (const c of order) if (c.kw.some(w => t.includes(" " + w + " "))) return c.k;
+  return OTHER;
 }
 function parse(raw) {
   let t = " " + raw.trim() + " ", day = 0;
@@ -278,7 +278,7 @@ function render() {
   const items = monthItems();
   const spent = items.reduce((s, i) => s + i.amt, 0);
   const budget = state.hh.budget;
-  const totalBudget = Object.values(budget).reduce((a, b) => a + Number(b || 0), 0);
+  const totalBudget = CATS.reduce((a, c) => a + Number(budget[c.k] || 0), 0);
   const left = totalBudget - spent;
   const dim = new Date(y, mo + 1, 0).getDate();
   const isNow = y === now.getFullYear() && mo === now.getMonth();
@@ -307,8 +307,8 @@ function render() {
     const b = Number(budget[c.k] || 0), u = byCat[c.k] || 0, p = b ? u / b : (u ? 1.01 : 0);
     const cls = p > 1 ? "bad" : p > Math.min(1, elapsed + .15) && p > .6 ? "warn" : "";
     const pill = p > 1 ? `<span class="pill bad">lewat ${rp(u - b)}</span>` : cls === "warn" ? `<span class="pill warn">${Math.round(p * 100)}%</span>` : "";
-    return `<div class="erow"><div class="name">${c.k}${pill}</div>
-      <div class="amt num"><span>${rp(u)}</span> / <button data-edit="${c.k}" aria-label="Ubah anggaran ${c.k}">${rp(b)}</button></div>
+    return `<div class="erow"><div class="name">${esc(c.k)}${pill}</div>
+      <div class="amt num"><span>${rp(u)}</span> / <button data-edit="${esc(c.k)}" aria-label="Ubah anggaran ${esc(c.k)}">${rp(b)}</button></div>
       <div class="bar ${cls}"><i style="width:${Math.min(100, p * 100)}%"></i></div></div>`;
   }).join("");
 
@@ -348,7 +348,7 @@ function render() {
 }
 function renderChips() {
   $("cats").innerHTML = `<button class="chip" data-cat="" aria-pressed="${state.selCat === null}">Otomatis</button>` +
-    CATS.map(c => `<button class="chip" data-cat="${c.k}" aria-pressed="${state.selCat === c.k}">${c.k}</button>`).join("");
+    CATS.map(c => `<button class="chip" data-cat="${esc(c.k)}" aria-pressed="${state.selCat === c.k}">${esc(c.k)}</button>`).join("");
   $("presets").innerHTML = PRESETS.map((p, i) => `<button class="chip preset" data-preset="${i}">+ ${p[0]} ${short(p[1])}</button>`).join("");
 }
 function updatePreview() {
@@ -357,7 +357,7 @@ function updatePreview() {
   if (!$("q").value.trim()) { $("preview").textContent = 'Ketik nama dan nominal. Bisa pakai rb, k, jt, atau "kemarin".'; return; }
   if (!p) { $("preview").textContent = "Tambahkan nominal, misalnya 25rb atau 25000."; return; }
   const today = new Date().toDateString() === new Date(p.ts).toDateString();
-  $("preview").innerHTML = `<b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${p.cat} · ${today ? "hari ini" : "kemarin"}`;
+  $("preview").innerHTML = `<b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${esc(p.cat)} · ${today ? "hari ini" : "kemarin"}`;
 }
 
 /* ================= Interaksi ================= */

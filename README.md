@@ -8,6 +8,7 @@ Web catat pengeluaran untuk dipakai berdua (suami-istri) atau sekeluarga, tersin
 - **Sinkron langsung**: catatan pasangan langsung muncul tanpa muat ulang.
 - **Siapa mencatat apa**: label dan warna per orang, total per orang, dan filter riwayat.
 - **Catat cepat**: ketik `kopi 25rb` atau `bensin 50rb kemarin`, kategori terisi otomatis.
+- **5 kategori ringkas**: Dapur & Rumah, Transport, Tagihan & Cicilan, Tabungan & Investasi, Gaya Hidup & Lainnya.
 - **Amplop anggaran bersama** per kategori, **aman dibelanjakan per hari**, dan **grafik harian**.
 
 ## Pemasangan (sekali saja)

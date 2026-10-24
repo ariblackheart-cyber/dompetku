@@ -6,7 +6,7 @@ create table if not exists public.households (
   id          uuid primary key default gen_random_uuid(),
   name        text not null default 'Rumah Tangga' check (char_length(name) between 1 and 60),
   invite_code text not null unique default upper(substr(md5(gen_random_uuid()::text), 1, 10)),
-  budget      jsonb not null default '{"Makan":1500000,"Transport":500000,"Belanja":700000,"Cicilan":0,"Arisan":0,"Investasi":0,"Tagihan":800000,"Hiburan":300000,"Lainnya":200000}',
+  budget      jsonb not null default '{"Dapur & Rumah":2200000,"Transport":500000,"Tagihan & Cicilan":800000,"Tabungan & Investasi":0,"Gaya Hidup & Lainnya":500000}',
   created_by  uuid references auth.users on delete set null,
   created_at  timestamptz not null default now()
 );
@@ -30,10 +30,28 @@ create table if not exists public.expenses (
   spent_at     timestamptz not null default now(),
   created_at   timestamptz not null default now()
 );
--- daftar kategori (diperbarui: tambah Cicilan, Arisan, Investasi)
+-- ========== Kategori (5 kategori ringkas) ==========
+-- Nama kategori bebas diatur dari aplikasi; database hanya membatasi panjangnya.
 alter table public.expenses drop constraint if exists expenses_category_check;
-alter table public.expenses add constraint expenses_category_check
-  check (category in ('Makan','Transport','Belanja','Cicilan','Arisan','Investasi','Tagihan','Hiburan','Lainnya'));
+update public.expenses set category = case category
+  when 'Makan' then 'Dapur & Rumah'      when 'Belanja' then 'Dapur & Rumah'
+  when 'Tagihan' then 'Tagihan & Cicilan' when 'Cicilan' then 'Tagihan & Cicilan' when 'Arisan' then 'Tagihan & Cicilan'
+  when 'Investasi' then 'Tabungan & Investasi'
+  when 'Hiburan' then 'Gaya Hidup & Lainnya' when 'Lainnya' then 'Gaya Hidup & Lainnya'
+  else category end
+where category in ('Makan','Belanja','Tagihan','Cicilan','Arisan','Investasi','Hiburan','Lainnya');
+alter table public.expenses add constraint expenses_category_check check (char_length(category) between 1 and 40);
+
+-- pindahkan anggaran lama ke kategori baru (dijumlahkan)
+alter table public.households alter column budget set default '{"Dapur & Rumah":2200000,"Transport":500000,"Tagihan & Cicilan":800000,"Tabungan & Investasi":0,"Gaya Hidup & Lainnya":500000}';
+update public.households set budget = jsonb_build_object(
+  'Dapur & Rumah',        coalesce((budget->>'Makan')::bigint,0) + coalesce((budget->>'Belanja')::bigint,0),
+  'Transport',            coalesce((budget->>'Transport')::bigint,0),
+  'Tagihan & Cicilan',    coalesce((budget->>'Tagihan')::bigint,0) + coalesce((budget->>'Cicilan')::bigint,0) + coalesce((budget->>'Arisan')::bigint,0),
+  'Tabungan & Investasi', coalesce((budget->>'Investasi')::bigint,0),
+  'Gaya Hidup & Lainnya', coalesce((budget->>'Hiburan')::bigint,0) + coalesce((budget->>'Lainnya')::bigint,0))
+where budget ? 'Makan';
+
 create index if not exists expenses_household_time on public.expenses (household_id, spent_at desc);
 
 -- ========== Pengecekan anggota ==========
