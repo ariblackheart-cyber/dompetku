@@ -88,6 +88,21 @@
     <div class="chart" id="chart"></div>
   </section>
 
+  <section aria-label="Laporan periode">
+    <h2>Laporan</h2>
+    <div class="report" id="report"></div>
+  </section>
+
+  <section class="panel" aria-label="Unduh Excel">
+    <h2 style="margin:0">Unduh Excel</h2>
+    <div class="toolbar">
+      <button class="ghost" id="exportPeriod">Periode ini</button>
+      <button class="ghost" id="exportAll">Semua catatan</button>
+    </div>
+    <div class="foot">Berisi daftar catatan, ringkasan per kategori, dan per orang. Bisa dibuka di Excel, Google Sheets, atau WPS.</div>
+    <div class="err" id="exportMsg" role="status"></div>
+  </section>
+
   <section aria-label="Riwayat">
     <div class="listhead"><h2>Riwayat</h2><div class="chips" id="whoFilter"></div></div>
     <div class="list" id="list"></div>
@@ -117,6 +132,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="config.js?v=8"></script>
+<script src="xlsx.js?v=8"></script>
 <script src="app.js?v=8"></script>
 </body>
 </html>

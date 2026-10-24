@@ -123,3 +123,27 @@ html,body{min-height:100%}
 .payday label{font-size:14px;font-weight:600}
 .payday input{width:72px;font:inherit;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
 .month span{min-width:150px}
+
+/* laporan */
+.report{display:flex;flex-direction:column;gap:12px}
+.report h3{font-family:var(--f-display);font-size:15px;margin:6px 0 0}
+.rep-top{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rep-top>div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.big2{font-size:19px;font-weight:500}
+.pill.good{background:var(--accent-soft);color:var(--accent)}
+.pill{display:inline-block;margin-left:0;white-space:normal}
+.insight{margin:0;font-size:14px}
+.tbl-wrap{overflow-x:auto}
+.rep-table{width:100%;border-collapse:collapse;font-size:13px}
+.rep-table th{text-align:right;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line)}
+.rep-table th:first-child,.rep-table td:first-child{text-align:left}
+.rep-table td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.rep-table td:first-child{white-space:normal}
+.rep-table tfoot td{font-weight:600;border-bottom:0}
+.up{color:var(--bad)} .down{color:var(--accent)}
+.biglist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;counter-reset:big}
+.biglist li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;counter-increment:big}
+.biglist li::before{content:counter(big) ".";color:var(--muted);font-family:var(--f-num);font-size:12px}
+.biglist .note{min-width:0;overflow-wrap:anywhere}
+.biglist .cat{display:block;color:var(--muted);font-size:12px}
+@media (max-width:420px){.rep-top{grid-template-columns:1fr}}

@@ -25,21 +25,36 @@ const CATS = [
     "telpon","telepon","telkom","wifi","internet","indihome","biznet","myrepublic","first media",
     "pulsa","kuota","paket data","telkomsel","xl","indosat","im3","tri","axis","smartfren",
     "kos","kost","sewa","sewa rumah","kontrakan","ipl","iuran","iuran rt","iuran sampah","sampah","keamanan",
-    "bpjs","asuransi","premi","pajak","pbb","spp","sekolah","uang sekolah","les","kursus","daycare",
+    "bpjs","bpjs ketenagakerjaan","asuransi","premi","pajak","pbb",
     "cicilan","angsuran","kredit","kartu kredit","kpr","paylater","pay later","spaylater","gopaylater","kredivo","akulaku","leasing","pinjaman","pinjol","utang","hutang","bayar utang",
-    "arisan","zakat","langganan","netflix","spotify","youtube premium","disney","vidio","icloud","google one"] },
+    "arisan","langganan","netflix","spotify","youtube premium","disney","vidio","icloud","google one"] },
+  { k: "Pendidikan", kw: [
+    "spp","sekolah","uang sekolah","biaya sekolah","uang gedung","daftar ulang","pendaftaran sekolah","tk","paud","sd","smp","sma","smk",
+    "kuliah","uang kuliah","ukt","semester","kampus","skripsi","wisuda","pondok","pesantren","mondok","tpq","tpa","ngaji","mengaji",
+    "les","les privat","bimbel","kursus","kursus bahasa","daycare","ekskul","study tour","karyawisata",
+    "buku","buku pelajaran","buku tulis","lks","alat tulis","atk","pensil","pulpen","tas sekolah","sepatu sekolah","seragam","seragam sekolah",
+    "uang saku","uang jajan sekolah","fotokopi","print tugas","laptop sekolah"] },
+  { k: "Kesehatan", kw: [
+    "obat","obat batuk","obat demam","apotek","apotik","kimia farma","k24","dokter","dokter gigi","dokter anak","dokter kandungan","bidan",
+    "klinik","puskesmas","rumah sakit","rs","igd","opname","rawat inap","rawat jalan","periksa","cek lab","lab","laboratorium","rontgen","usg",
+    "vitamin","suplemen","imunisasi","vaksin","kacamata","lensa kontak","cabut gigi","tambal gigi","behel","terapi","fisioterapi",
+    "halodoc","alodokter","bpjs kesehatan","asuransi kesehatan","masker","hand sanitizer","minyak kayu putih","termometer"] },
+  { k: "Hadiah & Sumbangan", kw: [
+    "hadiah","kado","bingkisan","parsel","hampers","kondangan","nikahan","undangan nikah","amplop nikah","sumbangan","nyumbang",
+    "sedekah","infaq","infak","donasi","zakat","zakat fitrah","zakat mal","kurban","qurban","wakaf","jumat berkah",
+    "angpao","angpau","thr","salam tempel","takziah","melayat","duka","jenguk","besuk","oleh oleh","ulang tahun","ultah","syukuran","aqiqah","khitanan","sunatan",
+    "kiriman orang tua","kirim ortu","kirim orang tua","uang ortu","transfer ortu","kirim mertua","bantu saudara"] },
   { k: "Tabungan & Investasi", kw: [
     "tabungan","nabung","menabung","setor tabungan","investasi","invest","saham","reksadana","reksa dana",
     "emas","logam mulia","antam","tabungan emas","deposito","obligasi","sbn","sbr","sukuk","crypto","kripto","bitcoin",
-    "dana darurat","dana pendidikan","dana pensiun","dplk","bibit","ajaib","pluang","tabungan haji","tabungan umroh"] },
+    "dana darurat","tabungan pendidikan","dana pendidikan","dana pensiun","dplk","bibit","ajaib","pluang","tabungan haji","tabungan umroh"] },
   { k: OTHER, kw: [
     "kopi","ngopi","cafe","kafe","starbucks","boba","nonton","bioskop","tiket nonton","tiket bioskop","tiket konser","konser","karaoke",
     "game","top up game","voucher game","liburan","wisata","tiket wisata","hotel","penginapan","villa","staycation","jalan jalan",
     "baju","celana","sepatu","sandal","tas","jam tangan","kosmetik","skincare","makeup","parfum","salon","potong rambut","barbershop","pangkas rambut","spa","gym","fitness",
-    "hobi","mainan","hadiah","kado","kondangan","sumbangan","sedekah","infaq","infak","donasi","shopee","tokopedia","lazada","tiktok shop","rokok",
-    "obat","apotek","dokter","klinik","rumah sakit","vitamin","periksa","kiriman orang tua","kirim ortu"] }
+    "hobi","mainan","shopee","tokopedia","lazada","tiktok shop","rokok","pijat","urut","laundry","cuci baju","potong kuku"] }
 ];
-const DEFAULT_BUDGET = { "Dapur & Rumah": 2200000, "Transport": 500000, "Tagihan & Cicilan": 800000, "Tabungan & Investasi": 0, [OTHER]: 500000 };
+const DEFAULT_BUDGET = { "Dapur & Rumah": 2200000, "Transport": 500000, "Tagihan & Cicilan": 800000, "Pendidikan": 0, "Kesehatan": 0, "Hadiah & Sumbangan": 0, "Tabungan & Investasi": 0, [OTHER]: 500000 };
 const PRESETS = [["Parkir", 2000, "Transport"], ["Kopi", 18000, OTHER], ["Makan siang", 25000, "Dapur & Rumah"], ["Bensin", 30000, "Transport"]];
 const PERSON_COLORS = ["#0e8a72", "#c0567f", "#3d7bd9", "#b7791f", "#7a5cc7", "#6b7a76"];
 const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -214,17 +229,22 @@ async function openHousehold(hid) {
   subscribe(hid);
 }
 
+const REPORT_PERIODS = 6;
+const shiftStart = (s, n) => new Date(s.getFullYear(), s.getMonth() + n, payday());
 async function loadMonth(d, force) {
-  const key = monthKey(d);
-  if (!force && state.loaded.has(key)) { render(); return; }
-  const start = periodStart(d), end = periodEnd(start);
+  const view = periodStart(d);
+  const starts = Array.from({ length: REPORT_PERIODS }, (_, i) => shiftStart(view, i - REPORT_PERIODS + 1));
+  const missing = force ? starts : starts.filter(st => !state.loaded.has(monthKey(st)));
+  if (!missing.length) { render(); return; }
+  const from = missing[0], to = periodEnd(missing[missing.length - 1]);
   const { data, error } = await sb.from("expenses").select("id,user_id,amount,note,category,spent_at")
-    .eq("household_id", state.hh.id).gte("spent_at", start.toISOString()).lt("spent_at", end.toISOString())
-    .order("spent_at", { ascending: false }).limit(2000);
-  if (error) { $("secMsg").textContent = friendlyError(error); render(); return; }
-  for (const [id, it] of state.items) { const t = new Date(it.ts); if (monthKey(t) === key && !String(id).startsWith("tmp-")) state.items.delete(id); }
+    .eq("household_id", state.hh.id).gte("spent_at", from.toISOString()).lt("spent_at", to.toISOString())
+    .order("spent_at", { ascending: false }).limit(10000);
+  if (error) { $("secMsg").className = "err"; $("secMsg").textContent = friendlyError(error); render(); return; }
+  for (const [id, it] of state.items) if (it.ts >= +from && it.ts < +to && !String(id).startsWith("tmp-")) state.items.delete(id);
   data.forEach(r => state.items.set(r.id, fromRow(r)));
-  state.loaded.add(key); render();
+  for (let st = from; st < to; st = shiftStart(st, 1)) state.loaded.add(monthKey(st));
+  render();
 }
 
 function subscribe(hid) {
@@ -258,7 +278,7 @@ document.addEventListener("visibilitychange", async () => {
 /* ================= Catat & ubah ================= */
 const norm = x => " " + x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
 // urutan saat panjang kata kunci sama
-const PRIORITY = ["Tabungan & Investasi", "Tagihan & Cicilan", "Transport", "Dapur & Rumah", OTHER];
+const PRIORITY = ["Tabungan & Investasi", "Kesehatan", "Pendidikan", "Hadiah & Sumbangan", "Tagihan & Cicilan", "Transport", "Dapur & Rumah", OTHER];
 function guessCat(text) {
   const t = norm(text);
   let best = OTHER, bestLen = 0, bestRank = 99;
@@ -397,6 +417,8 @@ function render() {
   });
   $("chart").innerHTML = svg + "</svg>";
 
+  renderReport(start, items, spent, totalBudget, todayIdx);
+
   // riwayat
   const shown = state.who === "all" ? items : items.filter(i => i.uid === state.who);
   if (!shown.length) {
@@ -415,6 +437,78 @@ function render() {
     $("list").innerHTML = html;
   }
 }
+function itemsOf(start) {
+  const key = monthKey(start);
+  return [...state.items.values()].filter(i => monthKey(new Date(i.ts)) === key);
+}
+const sum = arr => arr.reduce((s, i) => s + i.amt, 0);
+const shortPeriod = st => payday() === 1 ? MON3[st.getMonth()] : st.getDate() + " " + MON3[st.getMonth()];
+function pct(a, b) { return b ? Math.round((a - b) / b * 100) : null; }
+function diffPill(now, before, label) {
+  const p = pct(now, before);
+  if (p === null) return `<span class="foot">${label}: belum ada data</span>`;
+  if (p === 0) return `<span class="pill">sama dengan ${label}</span>`;
+  return p > 0 ? `<span class="pill bad">${p}% lebih boros dari ${label}</span>` : `<span class="pill good">${-p}% lebih hemat dari ${label}</span>`;
+}
+function renderReport(start, items, spent, totalBudget, todayIdx) {
+  const prevStart = shiftStart(start, -1), prev = itemsOf(prevStart), prevTotal = sum(prev);
+  const days = Math.round((periodEnd(start) - start) / DAY);
+  const ran = todayIdx >= 0 ? todayIdx + 1 : days;
+  const prevSameDay = sum(prev.filter(i => dayIndex(new Date(i.ts), prevStart) < ran));
+  const loadedPrev = state.loaded.has(monthKey(prevStart));
+
+  // ringkasan
+  let html = `<div class="rep-top">
+    <div><div class="label">Rata-rata per hari</div><div class="num big2">${rp(spent / ran)}</div><div class="foot">dari ${ran} hari berjalan</div></div>
+    <div><div class="label">Periode lalu (${shortPeriod(prevStart)})</div><div class="num big2">${loadedPrev ? rp(prevTotal) : "…"}</div>
+      <div>${!loadedPrev ? "" : todayIdx >= 0 ? diffPill(spent, prevSameDay, "hari ke-" + ran + " periode lalu") : diffPill(spent, prevTotal, "periode lalu")}</div></div>
+  </div>`;
+
+  // per kategori
+  const byNow = {}, byPrev = {};
+  items.forEach(i => byNow[i.cat] = (byNow[i.cat] || 0) + i.amt);
+  prev.forEach(i => byPrev[i.cat] = (byPrev[i.cat] || 0) + i.amt);
+  const rows = CATS.map(c => c.k).concat(Object.keys({ ...byNow, ...byPrev }).filter(k => !CATS.some(c => c.k === k)))
+    .filter(k => byNow[k] || byPrev[k]).sort((a, b) => (byNow[b] || 0) - (byNow[a] || 0));
+  if (rows.length) {
+    const top = rows[0];
+    if (byNow[top]) html += `<p class="insight">Pengeluaran terbesar periode ini ada di <b>${esc(top)}</b>, ${spent ? Math.round(byNow[top] / spent * 100) : 0}% dari total.</p>`;
+    html += `<div class="tbl-wrap"><table class="rep-table"><thead><tr><th>Kategori</th><th>Periode ini</th><th>Periode lalu</th><th>Selisih</th></tr></thead><tbody>` +
+      rows.map(k => {
+        const a = byNow[k] || 0, b = byPrev[k] || 0, d = a - b;
+        return `<tr><td>${esc(k)}</td><td class="num">${rp(a)}</td><td class="num">${rp(b)}</td><td class="num ${d > 0 ? "up" : d < 0 ? "down" : ""}">${d === 0 ? "–" : (d > 0 ? "+" : "−") + rp(Math.abs(d))}</td></tr>`;
+      }).join("") +
+      `</tbody><tfoot><tr><td>Total</td><td class="num">${rp(spent)}</td><td class="num">${rp(prevTotal)}</td><td class="num ${spent > prevTotal ? "up" : spent < prevTotal ? "down" : ""}">${spent === prevTotal ? "–" : (spent > prevTotal ? "+" : "−") + rp(Math.abs(spent - prevTotal))}</td></tr></tfoot></table></div>`;
+  }
+
+  // tren 6 periode
+  const starts = Array.from({ length: REPORT_PERIODS }, (_, i) => shiftStart(start, i - REPORT_PERIODS + 1));
+  const totals = starts.map(st => state.loaded.has(monthKey(st)) ? sum(itemsOf(st)) : null);
+  const W = 360, H = 140, pl = 34, pb = 20, pt = 12, bw = (W - pl) / starts.length;
+  const max = Math.max(1, totalBudget, ...totals.map(v => v || 0));
+  const step = [50000, 100000, 250000, 500000, 1000000, 2000000, 2500000, 5000000, 10000000].find(x => max / x <= 5) || 20000000;
+  const topV = Math.ceil(max / step) * step, sy = v => pt + (H - pt - pb) * (1 - v / topV);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren total pengeluaran ${REPORT_PERIODS} periode">`;
+  for (let v = 0; v <= topV; v += step) svg += `<line x1="${pl}" x2="${W}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)" stroke-width="0.6"/><text x="${pl - 4}" y="${sy(v) + 3}" text-anchor="end">${v ? short(v) : "0"}</text>`;
+  if (totalBudget > 0) svg += `<line x1="${pl}" x2="${W}" y1="${sy(totalBudget)}" y2="${sy(totalBudget)}" stroke="var(--warn)" stroke-dasharray="3 3"/><text x="${W - 2}" y="${sy(totalBudget) - 3}" text-anchor="end" style="fill:var(--warn)">anggaran ${short(totalBudget)}</text>`;
+  totals.forEach((v, i) => {
+    const x = pl + i * bw + bw * .2, cur = i === starts.length - 1;
+    if (v) svg += `<rect x="${x}" y="${sy(v)}" width="${bw * .6}" height="${Math.max(1, H - pb - sy(v))}" rx="2" fill="${totalBudget && v > totalBudget ? "var(--bad)" : "var(--accent)"}" opacity="${cur ? 1 : .55}"><title>${periodLabel(starts[i])}: ${rp(v)}</title></rect>`;
+    if (v) svg += `<text x="${x + bw * .3}" y="${sy(v) - 3}" text-anchor="middle" style="fill:var(--ink)">${short(v)}</text>`;
+    svg += `<text x="${x + bw * .3}" y="${H - 6}" text-anchor="middle" style="${cur ? "fill:var(--ink);font-weight:600" : ""}">${shortPeriod(starts[i])}</text>`;
+  });
+  html += `<h3>Tren ${REPORT_PERIODS} periode</h3><div class="chart">${svg}</svg></div>`;
+
+  // pengeluaran terbesar
+  const big = [...items].filter(i => !String(i.id).startsWith("tmp-")).sort((a, b) => b.amt - a.amt).slice(0, 5);
+  if (big.length) html += `<h3>5 pengeluaran terbesar</h3><ol class="biglist">` + big.map(i => {
+    const d = new Date(i.ts);
+    return `<li><span class="note">${esc(i.note)}<span class="cat">${esc(i.cat)} · ${d.getDate()} ${MON3[d.getMonth()]}</span></span><span class="num">${rp(i.amt)}</span></li>`;
+  }).join("") + `</ol>`;
+
+  $("report").innerHTML = html;
+}
+
 function renderChips() {
   $("cats").innerHTML = `<button class="chip" data-cat="" aria-pressed="${state.selCat === null}">Otomatis</button>` +
     CATS.map(c => `<button class="chip" data-cat="${esc(c.k)}" aria-pressed="${state.selCat === c.k}">${esc(c.k)}</button>`).join("");
@@ -429,7 +523,62 @@ function updatePreview() {
   $("preview").innerHTML = `<b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${esc(p.cat)} · ${today ? "hari ini" : "kemarin"}`;
 }
 
+/* ================= Ekspor Excel ================= */
+function download(bytes, filename) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const a = document.createElement("a"); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+const H = v => ({ v, s: "bold" }), R = v => ({ v, s: "rp" }), RB = v => ({ v, s: "boldrp" });
+function noteRows(list) {
+  const rows = [[H("Tanggal"), H("Catatan"), H("Kategori"), H("Dicatat oleh"), H("Jumlah")]];
+  [...list].sort((a, b) => a.ts - b.ts).forEach(i => rows.push([{ v: Xlsx.excelDate(i.ts), s: "date" }, i.note, i.cat, nameOf(i.uid), R(i.amt)]));
+  rows.push([], [null, H("Total"), null, null, RB(sum(list))]);
+  return rows;
+}
+async function exportExcel(scope) {
+  const msg = $("exportMsg"); msg.className = "err"; msg.textContent = "Menyiapkan file…";
+  try {
+    const budget = state.hh.budget;
+    if (scope === "period") {
+      const start = periodStart(state.view), list = itemsOf(start).filter(i => !String(i.id).startsWith("tmp-"));
+      const byCat = {}; list.forEach(i => byCat[i.cat] = (byCat[i.cat] || 0) + i.amt);
+      const byUser = {}; list.forEach(i => byUser[i.uid] = (byUser[i.uid] || 0) + i.amt);
+      const tb = CATS.reduce((a, c) => a + Number(budget[c.k] || 0), 0);
+      const sumRows = [[H("Periode"), periodLabel(start)], [], [H("Kategori"), H("Anggaran"), H("Terpakai"), H("Sisa")]];
+      CATS.forEach(c => { const b = Number(budget[c.k] || 0), u = byCat[c.k] || 0; sumRows.push([c.k, R(b), R(u), R(b - u)]); });
+      Object.keys(byCat).filter(k => !CATS.some(c => c.k === k)).forEach(k => sumRows.push([k, R(0), R(byCat[k]), R(-byCat[k])]));
+      sumRows.push([H("Total"), RB(tb), RB(sum(list)), RB(tb - sum(list))], [], [H("Dicatat oleh"), H("Jumlah")]);
+      state.members.forEach(m => sumRows.push([m.display_name, R(byUser[m.user_id] || 0)]));
+      const e = new Date(periodEnd(start) - DAY), f = d => d.getDate() + MON3[d.getMonth()];
+      download(Xlsx.makeXlsx([
+        { name: "Catatan", cols: [17, 34, 22, 16, 15], rows: noteRows(list) },
+        { name: "Ringkasan", cols: [24, 16, 16, 16], rows: sumRows }
+      ]), `dompetku-${f(start)}-${f(e)}-${e.getFullYear()}.xlsx`);
+    } else {
+      const { data, error } = await sb.from("expenses").select("id,user_id,amount,note,category,spent_at")
+        .eq("household_id", state.hh.id).order("spent_at", { ascending: true }).limit(20000);
+      if (error) throw error;
+      const list = data.map(fromRow);
+      if (!list.length) { msg.textContent = "Belum ada catatan untuk diunduh."; return; }
+      const cats = CATS.map(c => c.k).concat([...new Set(list.map(i => i.cat))].filter(k => !CATS.some(c => c.k === k)));
+      const per = new Map();
+      list.forEach(i => { const st = periodStart(new Date(i.ts)), k = +st; if (!per.has(k)) per.set(k, { st, by: {} }); const o = per.get(k).by; o[i.cat] = (o[i.cat] || 0) + i.amt; });
+      const perRows = [[H("Periode"), ...cats.map(H), H("Total")]];
+      [...per.values()].sort((a, b) => a.st - b.st).forEach(({ st, by }) => perRows.push([periodLabel(st), ...cats.map(k => R(by[k] || 0)), RB(cats.reduce((a, k) => a + (by[k] || 0), 0))]));
+      const d = new Date();
+      download(Xlsx.makeXlsx([
+        { name: "Semua catatan", cols: [17, 34, 22, 16, 15], rows: noteRows(list) },
+        { name: "Per periode", cols: [26, ...cats.map(() => 15), 16], rows: perRows }
+      ]), `dompetku-semua-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}.xlsx`);
+    }
+    msg.className = "err ok"; msg.textContent = "File Excel diunduh.";
+  } catch (er) { msg.className = "err"; msg.textContent = "Gagal membuat file: " + friendlyError(er); }
+}
+
 /* ================= Interaksi ================= */
+$("exportPeriod").addEventListener("click", () => exportExcel("period"));
+$("exportAll").addEventListener("click", () => exportExcel("all"));
 $("q").addEventListener("input", updatePreview);
 $("qform").addEventListener("submit", e => { e.preventDefault(); const p = parse($("q").value); if (!p) return; $("q").value = ""; updatePreview(); addItem(p); });
 $("cats").addEventListener("click", e => { const b = e.target.closest("[data-cat]"); if (!b) return; state.selCat = b.dataset.cat || null; renderChips(); updatePreview(); });

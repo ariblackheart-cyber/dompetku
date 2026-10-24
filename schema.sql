@@ -6,7 +6,7 @@ create table if not exists public.households (
   id          uuid primary key default gen_random_uuid(),
   name        text not null default 'Rumah Tangga' check (char_length(name) between 1 and 60),
   invite_code text not null unique default upper(substr(md5(gen_random_uuid()::text), 1, 10)),
-  budget      jsonb not null default '{"Dapur & Rumah":2200000,"Transport":500000,"Tagihan & Cicilan":800000,"Tabungan & Investasi":0,"Gaya Hidup & Lainnya":500000}',
+  budget      jsonb not null default '{"Dapur & Rumah":2200000,"Transport":500000,"Tagihan & Cicilan":800000,"Pendidikan":0,"Kesehatan":0,"Hadiah & Sumbangan":0,"Tabungan & Investasi":0,"Gaya Hidup & Lainnya":500000}',
   created_by  uuid references auth.users on delete set null,
   created_at  timestamptz not null default now()
 );
@@ -43,7 +43,7 @@ where category in ('Makan','Belanja','Tagihan','Cicilan','Arisan','Investasi','H
 alter table public.expenses add constraint expenses_category_check check (char_length(category) between 1 and 40);
 
 -- pindahkan anggaran lama ke kategori baru (dijumlahkan)
-alter table public.households alter column budget set default '{"Dapur & Rumah":2200000,"Transport":500000,"Tagihan & Cicilan":800000,"Tabungan & Investasi":0,"Gaya Hidup & Lainnya":500000}';
+alter table public.households alter column budget set default '{"Dapur & Rumah":2200000,"Transport":500000,"Tagihan & Cicilan":800000,"Pendidikan":0,"Kesehatan":0,"Hadiah & Sumbangan":0,"Tabungan & Investasi":0,"Gaya Hidup & Lainnya":500000}';
 update public.households set budget = jsonb_build_object(
   'Dapur & Rumah',        coalesce((budget->>'Makan')::bigint,0) + coalesce((budget->>'Belanja')::bigint,0),
   'Transport',            coalesce((budget->>'Transport')::bigint,0),
@@ -148,3 +148,17 @@ do $$ begin
   begin alter publication supabase_realtime add table public.expenses; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.households; exception when duplicate_object then null; end;
 end $$;
+
+
+update public.expenses set category = 'Pendidikan'
+where category in ('Tagihan & Cicilan', 'Gaya Hidup & Lainnya')
+  and note ~* '\m(spp|sekolah|kuliah|ukt|semester|les|bimbel|kursus|daycare|paud|pesantren|pondok|buku pelajaran|seragam|alat tulis|atk|study tour)\M';
+
+update public.expenses set category = 'Kesehatan'
+where category in ('Tagihan & Cicilan', 'Gaya Hidup & Lainnya')
+  and note ~* '\m(obat|apotek|apotik|dokter|klinik|puskesmas|rumah sakit|bidan|vitamin|periksa|imunisasi|vaksin|bpjs kesehatan|asuransi kesehatan)\M'
+  and note !~* '\mobat nyamuk\M';
+
+update public.expenses set category = 'Hadiah & Sumbangan'
+where category in ('Tagihan & Cicilan', 'Gaya Hidup & Lainnya')
+  and note ~* '\m(hadiah|kado|kondangan|nikahan|sumbangan|sedekah|infaq|infak|donasi|zakat|kurban|qurban|angpao|angpau|takziah|melayat|oleh oleh|kirim ortu|kiriman orang tua|kirim orang tua)\M';
