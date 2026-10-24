@@ -6,7 +6,7 @@ create table if not exists public.households (
   id          uuid primary key default gen_random_uuid(),
   name        text not null default 'Rumah Tangga' check (char_length(name) between 1 and 60),
   invite_code text not null unique default upper(substr(md5(gen_random_uuid()::text), 1, 10)),
-  budget      jsonb not null default '{"Makan":1500000,"Transport":500000,"Belanja":700000,"Tagihan":800000,"Hiburan":300000,"Lainnya":200000}',
+  budget      jsonb not null default '{"Makan":1500000,"Transport":500000,"Belanja":700000,"Cicilan":0,"Arisan":0,"Investasi":0,"Tagihan":800000,"Hiburan":300000,"Lainnya":200000}',
   created_by  uuid references auth.users on delete set null,
   created_at  timestamptz not null default now()
 );
@@ -26,10 +26,14 @@ create table if not exists public.expenses (
   user_id      uuid references auth.users on delete set null default auth.uid(),
   amount       bigint not null check (amount > 0 and amount < 1000000000000),
   note         text not null check (char_length(note) between 1 and 80),
-  category     text not null check (category in ('Makan','Transport','Belanja','Tagihan','Hiburan','Lainnya')),
+  category     text not null,
   spent_at     timestamptz not null default now(),
   created_at   timestamptz not null default now()
 );
+-- daftar kategori (diperbarui: tambah Cicilan, Arisan, Investasi)
+alter table public.expenses drop constraint if exists expenses_category_check;
+alter table public.expenses add constraint expenses_category_check
+  check (category in ('Makan','Transport','Belanja','Cicilan','Arisan','Investasi','Tagihan','Hiburan','Lainnya'));
 create index if not exists expenses_household_time on public.expenses (household_id, spent_at desc);
 
 -- ========== Pengecekan anggota ==========

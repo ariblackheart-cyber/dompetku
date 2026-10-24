@@ -4,11 +4,14 @@ const CATS = [
   { k: "Makan", kw: ["makan","kopi","nasi","bakso","mie","sarapan","jajan","snack","minum","teh","gofood","grabfood","ayam","sate","martabak","roti","warung"] },
   { k: "Transport", kw: ["bensin","parkir","ojek","gojek","grab","tol","bus","kereta","krl","angkot","taksi","pertalite","pertamax","servis"] },
   { k: "Belanja", kw: ["belanja","sabun","shopee","tokopedia","baju","sepatu","indomaret","alfamart","sayur","beras","minyak","galon","pasar","susu","popok"] },
-  { k: "Tagihan", kw: ["listrik","pln","token","air","pdam","wifi","internet","pulsa","kuota","kos","sewa","cicilan","bpjs","netflix","spotify","langganan","sekolah","spp"] },
+  { k: "Cicilan", kw: ["cicilan","angsuran","kredit","kpr","paylater","pay later","leasing","pinjaman","utang","hutang","dp motor","dp mobil"] },
+  { k: "Arisan", kw: ["arisan"] },
+  { k: "Investasi", kw: ["investasi","invest","saham","reksadana","reksa dana","emas","logam mulia","deposito","obligasi","sbn","sukuk","crypto","kripto","bitcoin","tabungan","nabung","dana darurat"] },
+  { k: "Tagihan", kw: ["listrik","pln","token","air","pdam","wifi","internet","pulsa","kuota","kos","sewa","bpjs","asuransi","netflix","spotify","langganan","sekolah","spp"] },
   { k: "Hiburan", kw: ["nonton","bioskop","game","main","karaoke","konser","jalan","liburan","hadiah","kado"] },
   { k: "Lainnya", kw: [] }
 ];
-const DEFAULT_BUDGET = { Makan: 1500000, Transport: 500000, Belanja: 700000, Tagihan: 800000, Hiburan: 300000, Lainnya: 200000 };
+const DEFAULT_BUDGET = { Makan: 1500000, Transport: 500000, Belanja: 700000, Cicilan: 0, Arisan: 0, Investasi: 0, Tagihan: 800000, Hiburan: 300000, Lainnya: 200000 };
 const PRESETS = [["Parkir", 2000, "Transport"], ["Kopi", 18000, "Makan"], ["Makan siang", 25000, "Makan"], ["Bensin", 30000, "Transport"]];
 const PERSON_COLORS = ["#0e8a72", "#c0567f", "#3d7bd9", "#b7791f", "#7a5cc7", "#6b7a76"];
 const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
