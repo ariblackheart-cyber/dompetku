@@ -1,3 +1,6 @@
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
 /* Layout: satu kolom sempit seperti buku kas saku; input cepat di atas, amplop, grafik, lalu daftar catatan */
 :root{
   --paper:#f2f4ef; --card:#fbfcf9; --ink:#1c2826; --muted:#5f6d69; --line:#d9dfd8;
