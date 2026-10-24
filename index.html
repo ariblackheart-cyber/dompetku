@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Dompetku</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Layar kunci -->
+<section class="lock" id="lockScreen">
+  <div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div>
+
+  <form class="lock" id="setupForm" hidden style="margin:0">
+    <p>Buat kata sandi untuk mengunci catatanmu. Semua data dienkripsi di perangkat ini dengan kata sandi tersebut.</p>
+    <div class="field"><label for="newPass">Kata sandi baru</label><input id="newPass" type="password" autocomplete="new-password" minlength="8" required></div>
+    <div class="strength"><i id="strengthBar"></i></div>
+    <div class="field"><label for="newPass2">Ulangi kata sandi</label><input id="newPass2" type="password" autocomplete="new-password" required></div>
+    <div class="note">Kata sandi tidak disimpan di mana pun. Kalau lupa, data tidak bisa dibuka lagi oleh siapa pun, termasuk kamu. Simpan cadangan secara rutin.</div>
+    <div class="err" id="setupErr" role="alert"></div>
+    <button class="btn">Buat dan masuk</button>
+    <button type="button" class="link" data-toggle="restoreLock">Punya file cadangan? Pulihkan</button>
+  </form>
+
+  <form class="panel restore" id="restoreLock" hidden>
+    <div class="field"><label for="restoreLock-file">File cadangan</label><input id="restoreLock-file" type="file" accept=".dompetku,application/json" required></div>
+    <div class="field"><label for="restoreLock-pass">Kata sandi cadangan</label><input id="restoreLock-pass" type="password" autocomplete="current-password" required></div>
+    <button class="btn" style="padding:10px">Pulihkan dan masuk</button>
+  </form>
+  <div class="err" id="unsupported" role="alert"></div>
+
+  <form class="lock" id="loginForm" hidden style="margin:0">
+    <p>Masukkan kata sandi untuk membuka catatanmu.</p>
+    <div class="field"><label for="pass">Kata sandi</label><input id="pass" type="password" autocomplete="current-password" required></div>
+    <div class="err" id="loginErr" role="alert"></div>
+    <button class="btn" id="loginBtn">Masuk</button>
+    <button type="button" class="link" id="forgot">Lupa kata sandi?</button>
+    <div class="panel" id="resetPanel" hidden>
+      <p>Tanpa kata sandi, data lama tidak bisa dibuka. Kamu bisa menghapus semuanya dan mulai dari awal. Ketik <b>HAPUS</b> untuk melanjutkan.</p>
+      <div class="field"><label for="resetConfirm">Konfirmasi</label><input id="resetConfirm" autocomplete="off"></div>
+      <button type="button" class="btn danger" id="resetBtn" disabled>Hapus semua data</button>
+    </div>
+  </form>
+</section>
+
+<!-- Aplikasi -->
+<div class="wrap" id="app" hidden>
+  <header>
+    <div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div>
+    <div class="month"><button id="prev" aria-label="Bulan sebelumnya">‹</button><span id="mlabel"></span><button id="next" aria-label="Bulan berikutnya">›</button></div>
+  </header>
+
+  <section class="quick" aria-label="Catat cepat">
+    <form class="qrow" id="qform">
+      <input id="q" autocomplete="off" placeholder="mis. kopi 25rb, bensin 50rb kemarin" aria-label="Catat pengeluaran">
+      <button class="btn" id="add" disabled>Catat</button>
+    </form>
+    <div class="preview" id="preview"></div>
+    <div class="chips" id="cats" aria-label="Kategori"></div>
+    <div class="chips" id="presets" aria-label="Pengeluaran rutin"></div>
+  </section>
+
+  <section class="summary" id="summary"></section>
+
+  <section aria-label="Amplop anggaran">
+    <h2>Amplop bulan ini</h2>
+    <div class="env" id="env"></div>
+  </section>
+
+  <section aria-label="Grafik harian">
+    <h2>Pengeluaran per hari</h2>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section aria-label="Riwayat">
+    <h2>Riwayat</h2>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="panel" aria-label="Keamanan dan cadangan">
+    <h2 style="margin:0">Keamanan &amp; cadangan</h2>
+    <div class="toolbar">
+      <button class="ghost" id="lockBtn">Kunci sekarang</button>
+      <button class="ghost" id="exportBtn">Unduh cadangan</button>
+      <button class="ghost" data-toggle="restoreApp">Pulihkan cadangan</button>
+      <button class="ghost" id="changeBtn">Ganti kata sandi</button>
+    </div>
+    <form class="panel restore" id="restoreApp" hidden style="padding:0;border:0">
+      <p class="foot" style="margin:0">Data di perangkat ini akan diganti dengan isi cadangan.</p>
+      <div class="field"><label for="restoreApp-file">File cadangan</label><input id="restoreApp-file" type="file" accept=".dompetku,application/json" required></div>
+      <div class="field"><label for="restoreApp-pass">Kata sandi cadangan</label><input id="restoreApp-pass" type="password" autocomplete="current-password" required></div>
+      <button class="btn" style="padding:10px">Pulihkan</button>
+    </form>
+    <form class="panel" id="changeForm" hidden style="padding:0;border:0">
+      <div class="field"><label for="oldPass">Kata sandi lama</label><input id="oldPass" type="password" autocomplete="current-password" required></div>
+      <div class="field"><label for="chPass">Kata sandi baru</label><input id="chPass" type="password" autocomplete="new-password" minlength="8" required></div>
+      <div class="field"><label for="chPass2">Ulangi kata sandi baru</label><input id="chPass2" type="password" autocomplete="new-password" required></div>
+      <button class="btn" style="padding:10px">Simpan kata sandi baru</button>
+    </form>
+    <div class="err" id="secMsg" role="status"></div>
+    <div class="foot">Terkunci otomatis setelah 5 menit tidak dipakai. Cadangan tetap terenkripsi dengan kata sandimu.</div>
+  </section>
+</div>
+
+<script src="crypto.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
