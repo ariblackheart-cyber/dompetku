@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ozuyxymtvtonivohxuoj.supabase.co wss://ozuyxymtvtonivohxuoj.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Dompetku</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -11,49 +11,57 @@
 </head>
 <body>
 
-<!-- Layar kunci -->
-<section class="lock" id="lockScreen">
-  <div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div>
+<div class="lock" id="loading"><div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div><p>Memuat…</p></div>
 
-  <form class="lock" id="setupForm" hidden style="margin:0">
-    <p>Buat akun untuk mengunci catatanmu. Semua data dienkripsi di perangkat ini dengan nama pengguna dan kata sandi tersebut.</p>
-    <div class="field"><label for="newUser">Nama pengguna</label><input id="newUser" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-    <div class="field"><label for="newPass">Kata sandi baru</label><input id="newPass" type="password" autocomplete="new-password" minlength="8" required></div>
-    <div class="strength"><i id="strengthBar"></i></div>
-    <div class="field"><label for="newPass2">Ulangi kata sandi</label><input id="newPass2" type="password" autocomplete="new-password" required></div>
-    <div class="note">Kata sandi tidak disimpan di mana pun. Kalau lupa, data tidak bisa dibuka lagi oleh siapa pun, termasuk kamu. Simpan cadangan secara rutin.</div>
-    <div class="err" id="setupErr" role="alert"></div>
-    <button class="btn">Buat dan masuk</button>
-    <button type="button" class="link" data-toggle="restoreLock">Punya file cadangan? Pulihkan</button>
+<!-- Masuk / daftar -->
+<section class="lock" id="authScreen" hidden>
+  <div><div class="label">Catatan pengeluaran bersama</div><h1>Dompetku</h1></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tabLogin" role="tab" aria-selected="true">Masuk</button>
+    <button class="tab" id="tabSignup" role="tab" aria-selected="false">Daftar</button>
+  </div>
+  <form class="lock" id="authForm" style="margin:0">
+    <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" autocapitalize="none" required></div>
+    <div class="field"><label for="password">Kata sandi</label><input id="password" type="password" autocomplete="current-password" minlength="8" required></div>
+    <div class="field" id="pass2Field" hidden><label for="password2">Ulangi kata sandi</label><input id="password2" type="password" autocomplete="new-password"></div>
+    <div class="err" id="authErr" role="alert"></div>
+    <button class="btn" id="authBtn">Masuk</button>
+    <button type="button" class="link" id="forgotBtn">Lupa kata sandi?</button>
   </form>
+</section>
 
-  <form class="panel restore" id="restoreLock" hidden>
-    <div class="field"><label for="restoreLock-file">File cadangan</label><input id="restoreLock-file" type="file" accept=".dompetku,application/json" required></div>
-    <div class="field"><label for="restoreLock-user">Nama pengguna</label><input id="restoreLock-user" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-    <div class="field"><label for="restoreLock-pass">Kata sandi cadangan</label><input id="restoreLock-pass" type="password" autocomplete="current-password" required></div>
-    <button class="btn" style="padding:10px">Pulihkan dan masuk</button>
-  </form>
-  <div class="err" id="unsupported" role="alert"></div>
+<!-- Atur kata sandi baru (dari email reset) -->
+<form class="lock" id="resetScreen" hidden>
+  <div><div class="label">Dompetku</div><h1>Kata sandi baru</h1></div>
+  <div class="field"><label for="newPw">Kata sandi baru</label><input id="newPw" type="password" autocomplete="new-password" minlength="8" required></div>
+  <div class="field"><label for="newPw2">Ulangi kata sandi</label><input id="newPw2" type="password" autocomplete="new-password" required></div>
+  <div class="err" id="resetErr" role="alert"></div>
+  <button class="btn">Simpan kata sandi</button>
+</form>
 
-  <form class="lock" id="loginForm" hidden style="margin:0">
-    <p>Masuk untuk membuka catatanmu.</p>
-    <div class="field"><label for="user">Nama pengguna</label><input id="user" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-    <div class="field"><label for="pass">Kata sandi</label><input id="pass" type="password" autocomplete="current-password" required></div>
-    <div class="err" id="loginErr" role="alert"></div>
-    <button class="btn" id="loginBtn">Masuk</button>
-    <button type="button" class="link" id="forgot">Lupa kata sandi?</button>
-    <div class="panel" id="resetPanel" hidden>
-      <p>Tanpa kata sandi, data lama tidak bisa dibuka. Kamu bisa menghapus semuanya dan mulai dari awal. Ketik <b>HAPUS</b> untuk melanjutkan.</p>
-      <div class="field"><label for="resetConfirm">Konfirmasi</label><input id="resetConfirm" autocomplete="off"></div>
-      <button type="button" class="btn danger" id="resetBtn" disabled>Hapus semua data</button>
-    </div>
+<!-- Buat / gabung rumah tangga -->
+<section class="lock" id="hhScreen" hidden>
+  <div><div class="label">Satu langkah lagi</div><h1>Rumah tangga</h1></div>
+  <p>Satu rumah tangga berisi kamu dan pasangan. Catatan dan anggarannya dipakai bersama.</p>
+  <div class="field"><label for="displayName">Nama panggilanmu</label><input id="displayName" maxlength="30" placeholder="mis. Ayah, Bunda, Ari" required></div>
+  <form class="panel" id="createForm">
+    <h2 style="margin:0">Buat baru</h2>
+    <div class="field"><label for="hhName">Nama rumah tangga</label><input id="hhName" maxlength="60" placeholder="Keluarga Ari"></div>
+    <button class="btn" style="padding:10px">Buat rumah tangga</button>
   </form>
+  <form class="panel" id="joinForm">
+    <h2 style="margin:0">Gabung dengan pasangan</h2>
+    <div class="field"><label for="joinCode">Kode undangan dari pasangan</label><input id="joinCode" maxlength="10" autocapitalize="characters" autocomplete="off" placeholder="10 huruf/angka" required></div>
+    <button class="btn" style="padding:10px">Gabung</button>
+  </form>
+  <div class="err" id="hhErr" role="alert"></div>
+  <button type="button" class="link" data-logout>Keluar</button>
 </section>
 
 <!-- Aplikasi -->
 <div class="wrap" id="app" hidden>
   <header>
-    <div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div>
+    <div><div class="label" id="hhLabel">Catatan pengeluaran</div><h1>Dompetku</h1></div>
     <div class="month"><button id="prev" aria-label="Bulan sebelumnya">‹</button><span id="mlabel"></span><button id="next" aria-label="Bulan berikutnya">›</button></div>
   </header>
 
@@ -68,6 +76,7 @@
   </section>
 
   <section class="summary" id="summary"></section>
+  <section class="people" id="people" aria-label="Pengeluaran per orang"></section>
 
   <section aria-label="Amplop anggaran">
     <h2>Amplop bulan ini</h2>
@@ -80,37 +89,28 @@
   </section>
 
   <section aria-label="Riwayat">
-    <h2>Riwayat</h2>
+    <div class="listhead"><h2>Riwayat</h2><div class="chips" id="whoFilter"></div></div>
     <div class="list" id="list"></div>
   </section>
 
-  <section class="panel" aria-label="Keamanan dan cadangan">
-    <h2 style="margin:0">Keamanan &amp; cadangan</h2>
-    <div class="toolbar">
-      <button class="ghost" id="lockBtn">Kunci sekarang</button>
-      <button class="ghost" id="exportBtn">Unduh cadangan</button>
-      <button class="ghost" data-toggle="restoreApp">Pulihkan cadangan</button>
-      <button class="ghost" id="changeBtn">Ganti kata sandi</button>
+  <section class="panel" aria-label="Akun dan rumah tangga">
+    <h2 style="margin:0">Rumah tangga</h2>
+    <div class="invite">
+      <div><div class="label">Kode undangan untuk pasangan</div><div class="code num" id="inviteCode">…</div></div>
+      <div class="toolbar"><button class="ghost" id="copyCode">Salin</button><button class="ghost" id="newCode">Buat kode baru</button></div>
     </div>
-    <form class="panel restore" id="restoreApp" hidden style="padding:0;border:0">
-      <p class="foot" style="margin:0">Data di perangkat ini akan diganti dengan isi cadangan.</p>
-      <div class="field"><label for="restoreApp-file">File cadangan</label><input id="restoreApp-file" type="file" accept=".dompetku,application/json" required></div>
-      <div class="field"><label for="restoreApp-user">Nama pengguna</label><input id="restoreApp-user" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-    <div class="field"><label for="restoreApp-pass">Kata sandi cadangan</label><input id="restoreApp-pass" type="password" autocomplete="current-password" required></div>
-      <button class="btn" style="padding:10px">Pulihkan</button>
-    </form>
-    <form class="panel" id="changeForm" hidden style="padding:0;border:0">
-      <div class="field"><label for="oldPass">Kata sandi lama</label><input id="oldPass" type="password" autocomplete="current-password" required></div>
-      <div class="field"><label for="chPass">Kata sandi baru</label><input id="chPass" type="password" autocomplete="new-password" minlength="8" required></div>
-      <div class="field"><label for="chPass2">Ulangi kata sandi baru</label><input id="chPass2" type="password" autocomplete="new-password" required></div>
-      <button class="btn" style="padding:10px">Simpan kata sandi baru</button>
-    </form>
+    <div class="foot">Pasangan cukup daftar dengan emailnya sendiri, lalu pilih "Gabung" dan masukkan kode ini.</div>
+    <div class="foot" id="memberList"></div>
+    <div class="toolbar">
+      <button class="ghost" data-logout>Keluar</button>
+    </div>
     <div class="err" id="secMsg" role="status"></div>
-    <div class="foot">Terkunci otomatis setelah 5 menit tidak dipakai. Cadangan tetap terenkripsi dengan kata sandimu.</div>
+    <div class="foot" id="syncState">Menyambungkan…</div>
   </section>
 </div>
 
-<script src="crypto.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

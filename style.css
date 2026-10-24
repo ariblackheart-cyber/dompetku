@@ -98,3 +98,20 @@ html,body{min-height:100%}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .strength{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 .strength i{display:block;height:100%;width:0}
+
+/* versi bersama */
+.tabs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;background:var(--card)}
+.tab{font:inherit;font-weight:600;border:0;border-radius:7px;padding:8px;background:transparent;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.people{display:flex;gap:8px;flex-wrap:wrap}
+.person{flex:1 1 140px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.person .who{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.person .num{font-size:17px;margin-top:2px}
+.person .share{font-size:12px;color:var(--muted)}
+.listhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.listhead h2{margin:0}
+.item .by{display:inline-flex;align-items:center;gap:4px}
+.invite{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.code{font-size:24px;letter-spacing:.12em;font-weight:500;user-select:all}
+.ok{color:var(--accent)}

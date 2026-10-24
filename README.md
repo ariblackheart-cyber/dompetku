@@ -1,30 +1,38 @@
 # Dompetku
 
-Web catat pengeluaran pribadi dengan kata sandi dan data terenkripsi.
+Web catat pengeluaran untuk dipakai berdua (suami-istri) atau sekeluarga, tersinkron langsung lewat Supabase.
 
 ## Fitur
+- **Akun masing-masing**: daftar dengan email dan kata sandi sendiri.
+- **Rumah tangga bersama**: satu orang membuat, pasangan bergabung dengan kode undangan.
+- **Sinkron langsung**: catatan pasangan langsung muncul tanpa muat ulang.
+- **Siapa mencatat apa**: label dan warna per orang, total per orang, dan filter riwayat.
 - **Catat cepat**: ketik `kopi 25rb` atau `bensin 50rb kemarin`, kategori terisi otomatis.
-- **Tombol rutin** untuk parkir, kopi, makan siang, bensin.
-- **Amplop anggaran** per kategori, dengan peringatan saat hampir atau sudah lewat batas.
-- **Aman dibelanjakan per hari**: sisa anggaran dibagi hari tersisa bulan ini.
-- **Grafik harian** dengan garis jatah harian.
+- **Amplop anggaran bersama** per kategori, **aman dibelanjakan per hari**, dan **grafik harian**.
+
+## Pemasangan (sekali saja)
+
+### 1. Siapkan database
+Supabase → **SQL Editor** → **New query** → tempel seluruh isi `schema.sql` → **Run**.
+Aman dijalankan ulang kalau ada pembaruan.
+
+### 2. Atur alamat web untuk email konfirmasi
+Supabase → **Authentication** → **URL Configuration**:
+- **Site URL**: `https://ariblackheart-cyber.github.io/dompetku/`
+- **Redirect URLs**: tambahkan `https://ariblackheart-cyber.github.io/dompetku/`
+
+Tanpa langkah ini, tautan di email konfirmasi dan reset kata sandi akan mengarah ke alamat yang salah.
+
+### 3. Aktifkan GitHub Pages
+Repo → **Settings** → **Pages** → **Deploy from a branch** → **main** / **(root)**.
+
+## Cara pakai berdua
+1. Suami (atau istri) membuka web, **Daftar**, konfirmasi email, lalu **Buat rumah tangga**.
+2. Salin **kode undangan** di bagian bawah aplikasi dan kirim ke pasangan.
+3. Pasangan **Daftar** dengan emailnya sendiri, lalu **Gabung** dengan kode itu.
 
 ## Keamanan
-- Masuk dengan nama pengguna dan kata sandi. Akun dibuat sendiri saat pertama membuka web, tidak ada kata sandi di dalam kode.
-- Semua catatan dienkripsi dengan **AES-GCM 256-bit**. Kuncinya dibuat dari kata sandi lewat **PBKDF2-SHA256 600.000 iterasi** dengan salt acak.
-- Kata sandi tidak disimpan di mana pun. Yang tersimpan di browser hanya data terenkripsi.
-- Terkunci otomatis setelah 5 menit tidak dipakai, dan ada tombol **Kunci sekarang**.
-- Ada jeda yang makin lama setelah beberapa kali salah kata sandi.
-- Content Security Policy ketat: tidak ada skrip dari luar dan tidak ada koneksi ke server mana pun.
-- Data tidak pernah dikirim ke mana-mana. Repo ini hanya berisi kode, bukan datamu.
-
-**Penting:** kalau lupa kata sandi, data tidak bisa dibuka oleh siapa pun. Unduh cadangan secara rutin (file cadangan juga terenkripsi).
-
-## Pindah HP / browser
-Data tersimpan per browser. Untuk pindah, pakai **Unduh cadangan** di perangkat lama, lalu **Pulihkan cadangan** di perangkat baru dengan kata sandi yang sama.
-
-## Menjalankan
-Aktifkan GitHub Pages: **Settings → Pages → Source: Deploy from a branch → main / (root)**.
-Web akan ada di `https://<username>.github.io/dompetku/`.
-
-Enkripsi butuh https, jadi buka lewat GitHub Pages (bukan dengan klik dua kali file `index.html`).
+- Setiap tabel dilindungi **Row Level Security**: hanya anggota rumah tangga yang bisa melihat dan mengubah datanya. Orang lain, termasuk pengguna Supabase lain di project ini, tidak bisa membaca apa pun.
+- Pengguna tidak bisa mencatat atas nama orang lain, dan kode undangan hanya bisa diganti lewat tombol di aplikasi.
+- `config.js` hanya berisi **publishable key**, yang memang aman dipublikasikan. **Jangan pernah** menaruh secret key / service_role key di repo ini.
+- Content Security Policy membatasi web hanya terhubung ke project Supabase ini.
