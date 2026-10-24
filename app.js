@@ -1,13 +1,43 @@
 "use strict";
 /* ================= Konfigurasi ================= */
 const OTHER = "Gaya Hidup & Lainnya";
-// Urutan penting: kategori yang lebih spesifik dicek lebih dulu. Kata yang tidak dikenali masuk ke OTHER.
+// Kata kunci per kategori. Kata yang tidak dikenali masuk ke OTHER.
+// Kalau beberapa kata kunci cocok, yang paling panjang menang ("tiket nonton" mengalahkan "tiket").
 const CATS = [
-  { k: "Dapur & Rumah", kw: ["makan","jajan","jajanan","snack","camilan","cemilan","air mineral","aqua","le minerale","air minum","makan siang","makan malam","sarapan","nasi","lauk","sayur","sayuran","beras","minyak","telur","ayam","ikan","daging","bumbu","gula","garam","susu","roti","buah","galon","gas","elpiji","lpg","sabun","sampo","deterjen","odol","popok","pampers","tisu","belanja","belanjaan","dapur","pasar","indomaret","alfamart","superindo","hypermart","warung","gofood","grabfood","shopeefood","catering","katering"] },
-  { k: "Transport", kw: ["tiket","bensin","pertalite","pertamax","solar","parkir","ojek","ojol","gojek","grab","maxim","tol","bus","kereta","krl","angkot","taksi","pesawat","tiket pesawat","servis","service","oli","ban","cuci motor","cuci mobil","bengkel"] },
-  { k: "Tagihan & Cicilan", kw: ["listrik","pln","token","pdam","tagihan air","bayar air","air pdam","telpon","telepon","wifi","internet","indihome","biznet","pulsa","kuota","paket data","kos","kost","sewa","kontrakan","bpjs","asuransi","iuran","spp","sekolah","les","cicilan","angsuran","kredit","kpr","paylater","pay later","leasing","pinjaman","utang","hutang","arisan","netflix","spotify","langganan","youtube premium"] },
-  { k: "Tabungan & Investasi", kw: ["tabungan","nabung","menabung","investasi","invest","saham","reksadana","reksa dana","emas","logam mulia","antam","deposito","obligasi","sbn","sbr","ori","sukuk","crypto","kripto","bitcoin","dana darurat"] },
-  { k: OTHER, kw: [] }
+  { k: "Dapur & Rumah", kw: [
+    "makan","makan siang","makan malam","sarapan","nasi","nasi bungkus","lauk","lauk pauk","sayur","sayuran","buah","buah buahan",
+    "beras","minyak","minyak goreng","telur","ayam","ikan","daging","tahu","tempe","bumbu","cabai","cabe","bawang","gula","garam","kecap","tepung",
+    "susu","susu formula","roti","mie instan","indomie","kopi bubuk","kopi sachet","teh celup",
+    "air mineral","aqua","le minerale","air minum","air galon","galon","isi galon","gas","elpiji","lpg","tabung gas",
+    "jajan","jajanan","snack","camilan","cemilan","bakso","soto","sate","mie ayam","nasi goreng","nasi padang","warteg","ayam taliwang","plecing",
+    "sabun","sabun cuci","sabun mandi","sampo","shampo","deterjen","pewangi","odol","pasta gigi","sikat gigi","popok","pampers","tisu","pembalut","obat nyamuk",
+    "belanja","belanjaan","belanja bulanan","sembako","dapur","pasar","warung","toko kelontong","indomaret","alfamart","alfamidi","superindo","hypermart","lottemart","transmart",
+    "gofood","grabfood","shopeefood","catering","katering","perabot","alat dapur","peralatan rumah","lampu"] },
+  { k: "Transport", kw: [
+    "tiket","bensin","isi bensin","bbm","pertalite","pertamax","pertamax turbo","solar","dexlite",
+    "parkir","ojek","ojol","gojek","goride","gocar","grab","grabbike","grabcar","maxim","indrive","taksi","bluebird",
+    "tol","e toll","etoll","bus","damri","travel","shuttle","kereta","krl","mrt","lrt","angkot","bemo","cidomo",
+    "pesawat","tiket pesawat","bagasi","bandara","kapal","kapal laut","tiket kapal","pelni","feri","ferry","kapal feri","speedboat","fastboat","fast boat","penyeberangan","pelabuhan",
+    "servis","service","servis motor","servis mobil","bengkel","oli","ganti oli","ban","tambal ban","aki","cuci motor","cuci mobil",
+    "sewa motor","sewa mobil","rental mobil","pajak motor","pajak mobil","pajak kendaraan","stnk","sim"] },
+  { k: "Tagihan & Cicilan", kw: [
+    "listrik","pln","token","token listrik","tagihan listrik","pdam","tagihan air","bayar air","air pdam",
+    "telpon","telepon","telkom","wifi","internet","indihome","biznet","myrepublic","first media",
+    "pulsa","kuota","paket data","telkomsel","xl","indosat","im3","tri","axis","smartfren",
+    "kos","kost","sewa","sewa rumah","kontrakan","ipl","iuran","iuran rt","iuran sampah","sampah","keamanan",
+    "bpjs","asuransi","premi","pajak","pbb","spp","sekolah","uang sekolah","les","kursus","daycare",
+    "cicilan","angsuran","kredit","kartu kredit","kpr","paylater","pay later","spaylater","gopaylater","kredivo","akulaku","leasing","pinjaman","pinjol","utang","hutang","bayar utang",
+    "arisan","zakat","langganan","netflix","spotify","youtube premium","disney","vidio","icloud","google one"] },
+  { k: "Tabungan & Investasi", kw: [
+    "tabungan","nabung","menabung","setor tabungan","investasi","invest","saham","reksadana","reksa dana",
+    "emas","logam mulia","antam","tabungan emas","deposito","obligasi","sbn","sbr","sukuk","crypto","kripto","bitcoin",
+    "dana darurat","dana pendidikan","dana pensiun","dplk","bibit","ajaib","pluang","tabungan haji","tabungan umroh"] },
+  { k: OTHER, kw: [
+    "kopi","ngopi","cafe","kafe","starbucks","boba","nonton","bioskop","tiket nonton","tiket bioskop","tiket konser","konser","karaoke",
+    "game","top up game","voucher game","liburan","wisata","tiket wisata","hotel","penginapan","villa","staycation","jalan jalan",
+    "baju","celana","sepatu","sandal","tas","jam tangan","kosmetik","skincare","makeup","parfum","salon","potong rambut","barbershop","pangkas rambut","spa","gym","fitness",
+    "hobi","mainan","hadiah","kado","kondangan","sumbangan","sedekah","infaq","infak","donasi","shopee","tokopedia","lazada","tiktok shop","rokok",
+    "obat","apotek","dokter","klinik","rumah sakit","vitamin","periksa","kiriman orang tua","kirim ortu"] }
 ];
 const DEFAULT_BUDGET = { "Dapur & Rumah": 2200000, "Transport": 500000, "Tagihan & Cicilan": 800000, "Tabungan & Investasi": 0, [OTHER]: 500000 };
 const PRESETS = [["Parkir", 2000, "Transport"], ["Kopi", 18000, OTHER], ["Makan siang", 25000, "Dapur & Rumah"], ["Bensin", 30000, "Transport"]];
@@ -211,12 +241,20 @@ document.addEventListener("visibilitychange", async () => {
 });
 
 /* ================= Catat & ubah ================= */
+const norm = x => " " + x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
+// urutan saat panjang kata kunci sama
+const PRIORITY = ["Tabungan & Investasi", "Tagihan & Cicilan", "Transport", "Dapur & Rumah", OTHER];
 function guessCat(text) {
-  const t = " " + text.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ") + " ";
-  // cocokkan per kata utuh, supaya "air" tidak ikut cocok di dalam kata lain
-  const order = [CATS[3], CATS[2], CATS[1], CATS[0]];
-  for (const c of order) if (c.kw.some(w => t.includes(" " + w + " "))) return c.k;
-  return OTHER;
+  const t = norm(text);
+  let best = OTHER, bestLen = 0, bestRank = 99;
+  for (const c of CATS) {
+    const rank = PRIORITY.indexOf(c.k);
+    for (const w of c.kw) {
+      const n = norm(w).trim();
+      if (t.includes(" " + n + " ") && (n.length > bestLen || (n.length === bestLen && rank < bestRank))) { best = c.k; bestLen = n.length; bestRank = rank; }
+    }
+  }
+  return best;
 }
 function parse(raw) {
   let t = " " + raw.trim() + " ", day = 0;
