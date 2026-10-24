@@ -9,6 +9,7 @@ Web catat pengeluaran untuk dipakai berdua (suami-istri) atau sekeluarga, tersin
 - **Siapa mencatat apa**: label dan warna per orang, total per orang, dan filter riwayat.
 - **Catat cepat**: ketik `kopi 25rb` atau `bensin 50rb kemarin`, kategori terisi otomatis.
 - **5 kategori ringkas**: Dapur & Rumah, Transport, Tagihan & Cicilan, Tabungan & Investasi, Gaya Hidup & Lainnya.
+- **Periode gajian**: anggaran dihitung dari tanggal gajian (bawaan 25) sampai sehari sebelum gajian berikutnya. Bisa diubah di bagian Rumah tangga.
 - **Amplop anggaran bersama** per kategori, **aman dibelanjakan per hari**, dan **grafik harian**.
 
 ## Pemasangan (sekali saja)

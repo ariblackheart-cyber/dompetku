@@ -50,7 +50,19 @@ const $ = id => document.getElementById(id);
 const rp = n => "Rp" + Math.round(n).toLocaleString("id-ID");
 const short = n => n >= 1e6 ? (n / 1e6).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(n);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const monthKey = d => d.getFullYear() + "-" + d.getMonth();
+/* ----- periode gajian: dari tanggal gajian sampai sehari sebelum gajian berikutnya ----- */
+const MON3 = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const DAY = 864e5;
+const payday = () => Math.min(28, Math.max(1, parseInt(state.hh && state.hh.budget && state.hh.budget._tgl_gajian, 10) || 25));
+function periodStart(d) { const s = new Date(d.getFullYear(), d.getMonth(), payday()); if (d < s) s.setMonth(s.getMonth() - 1); return s; }
+const periodEnd = s => new Date(s.getFullYear(), s.getMonth() + 1, s.getDate());
+const monthKey = d => { const s = periodStart(d); return s.getFullYear() + "-" + s.getMonth(); };
+const dayIndex = (d, s) => Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - s) / DAY);
+function periodLabel(s) {
+  if (s.getDate() === 1) return MONTHS[s.getMonth()] + " " + s.getFullYear();
+  const e = new Date(periodEnd(s) - DAY);
+  return `${s.getDate()} ${MON3[s.getMonth()]} – ${e.getDate()} ${MON3[e.getMonth()]} ${e.getFullYear()}`;
+}
 const redirectUrl = () => location.origin + location.pathname;
 
 function show(screen) {
@@ -196,6 +208,7 @@ async function openHousehold(hid) {
   state.hh = { ...hh.data, budget: { ...DEFAULT_BUDGET, ...hh.data.budget } };
   state.members = mem.data;
   state.items = new Map(); state.loaded = new Set();
+  state.view = periodStart(new Date());
   show("app"); renderChips(); updatePreview(); renderHousehold();
   await loadMonth(state.view, true);
   subscribe(hid);
@@ -204,7 +217,7 @@ async function openHousehold(hid) {
 async function loadMonth(d, force) {
   const key = monthKey(d);
   if (!force && state.loaded.has(key)) { render(); return; }
-  const start = new Date(d.getFullYear(), d.getMonth(), 1), end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  const start = periodStart(d), end = periodEnd(start);
   const { data, error } = await sb.from("expenses").select("id,user_id,amount,note,category,spent_at")
     .eq("household_id", state.hh.id).gte("spent_at", start.toISOString()).lt("spent_at", end.toISOString())
     .order("spent_at", { ascending: false }).limit(2000);
@@ -224,8 +237,10 @@ function subscribe(hid) {
     })
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "expenses" }, p => { if (state.items.delete(p.old.id)) render(); })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "households", filter: "id=eq." + hid }, p => {
+      const before = payday();
       state.hh = { ...state.hh, ...p.new, budget: { ...DEFAULT_BUDGET, ...p.new.budget } };
-      renderHousehold(); render();
+      renderHousehold();
+      if (payday() !== before) resetPeriod(); else render();
     })
     .subscribe(status => {
       $("syncState").textContent = status === "SUBSCRIBED" ? "Tersinkron langsung dengan pasangan." :
@@ -295,6 +310,17 @@ async function saveBudget(k, v) {
   if (error) { state.hh.budget[k] = prev; render(); $("secMsg").textContent = "Gagal menyimpan anggaran: " + friendlyError(error); }
 }
 
+function resetPeriod() {
+  state.loaded = new Set();
+  state.view = periodStart(new Date());
+  loadMonth(state.view, true);
+}
+function shiftPeriod(n) {
+  const s = periodStart(state.view);
+  state.view = new Date(s.getFullYear(), s.getMonth() + n, payday());
+  loadMonth(state.view);
+}
+
 /* ================= Tampilan ================= */
 function monthItems() {
   const key = monthKey(state.view);
@@ -303,6 +329,7 @@ function monthItems() {
 function renderHousehold() {
   $("hhLabel").textContent = state.hh.name;
   $("inviteCode").textContent = state.hh.invite_code;
+  if (document.activeElement !== $("payday")) $("payday").value = payday();
   $("memberList").innerHTML = "Anggota: " + state.members.map(m =>
     `<span class="by"><span class="dot" style="background:${colorOf(m.user_id)}"></span>${esc(m.display_name)}${m.user_id === state.user.id ? " (kamu)" : ""}</span>`).join(", ");
   const opts = [["all", "Semua"], ...state.members.map(m => [m.user_id, m.user_id === state.user.id ? "Saya" : m.display_name])];
@@ -311,22 +338,24 @@ function renderHousehold() {
 }
 function render() {
   if (!state.hh) return;
-  const y = state.view.getFullYear(), mo = state.view.getMonth(), now = new Date();
-  $("mlabel").textContent = MONTHS[mo] + " " + y;
+  const now = new Date(), start = periodStart(state.view), end = periodEnd(start);
+  $("mlabel").textContent = periodLabel(start);
   const items = monthItems();
   const spent = items.reduce((s, i) => s + i.amt, 0);
   const budget = state.hh.budget;
   const totalBudget = CATS.reduce((a, c) => a + Number(budget[c.k] || 0), 0);
   const left = totalBudget - spent;
-  const dim = new Date(y, mo + 1, 0).getDate();
-  const isNow = y === now.getFullYear() && mo === now.getMonth();
-  const daysLeft = isNow ? dim - now.getDate() + 1 : (state.view > now ? dim : 0);
+  const dim = Math.round((end - start) / DAY);
+  const isNow = now >= start && now < end;
+  const todayIdx = isNow ? dayIndex(now, start) : -1;
+  const daysLeft = isNow ? dim - todayIdx : (start > now ? dim : 0);
+  const untilText = payday() === 1 ? "tersisa bulan ini" : (daysLeft === 1 ? "lagi, besok gajian" : "lagi sampai gajian");
   const perDay = daysLeft > 0 ? left / daysLeft : 0;
   const neg = v => v < 0 ? "−" + rp(-v) : rp(v);
 
   const safe = daysLeft > 0
-    ? `<div class="safe${left < 0 ? " over" : ""}"><div class="label">Aman dibelanjakan per hari (berdua)</div><div class="big num">${left < 0 ? "Rp0" : rp(perDay)}</div><small>${left < 0 ? `Lewat anggaran ${rp(-left)}` : `untuk ${daysLeft} hari tersisa bulan ini`}</small></div>`
-    : `<div class="safe${left < 0 ? " over" : ""}"><div class="label">Hasil bulan ini</div><div class="big num">${neg(left)}</div><small>${left < 0 ? "melewati anggaran" : "sisa dari anggaran"}</small></div>`;
+    ? `<div class="safe${left < 0 ? " over" : ""}"><div class="label">Aman dibelanjakan per hari (berdua)</div><div class="big num">${left < 0 ? "Rp0" : rp(perDay)}</div><small>${left < 0 ? `Lewat anggaran ${rp(-left)}` : `untuk ${daysLeft} hari ${untilText}`}</small></div>`
+    : `<div class="safe${left < 0 ? " over" : ""}"><div class="label">Hasil periode ini</div><div class="big num">${neg(left)}</div><small>${left < 0 ? "melewati anggaran" : "sisa dari anggaran"}</small></div>`;
   $("summary").innerHTML = safe +
     `<div><div class="label">Terpakai</div><div class="big num">${rp(spent)}</div></div>` +
     `<div><div class="label">Sisa anggaran</div><div class="big num" style="color:${left < 0 ? "var(--bad)" : "inherit"}">${neg(left)}</div></div>`;
@@ -340,7 +369,7 @@ function render() {
 
   // amplop
   const byCat = {}; items.forEach(i => byCat[i.cat] = (byCat[i.cat] || 0) + i.amt);
-  const elapsed = isNow ? now.getDate() / dim : 1;
+  const elapsed = isNow ? (todayIdx + 1) / dim : 1;
   $("env").innerHTML = CATS.map(c => {
     const b = Number(budget[c.k] || 0), u = byCat[c.k] || 0, p = b ? u / b : (u ? 1.01 : 0);
     const cls = p > 1 ? "bad" : p > Math.min(1, elapsed + .15) && p > .6 ? "warn" : "";
@@ -351,7 +380,7 @@ function render() {
   }).join("");
 
   // grafik
-  const daily = Array(dim).fill(0); items.forEach(i => daily[new Date(i.ts).getDate() - 1] += i.amt);
+  const daily = Array(dim).fill(0); items.forEach(i => { const k = dayIndex(new Date(i.ts), start); if (k >= 0 && k < dim) daily[k] += i.amt; });
   const W = 360, H = 150, pl = 30, pb = 18, pt = 10, bw = (W - pl) / dim, max = Math.max(1, ...daily);
   const avgPerDay = totalBudget / dim, ceil = Math.max(max, avgPerDay);
   const step = ceil > 500000 ? 250000 : ceil > 200000 ? 100000 : ceil > 100000 ? 50000 : ceil > 40000 ? 20000 : 10000;
@@ -360,16 +389,18 @@ function render() {
   for (let v = 0; v <= top; v += step) svg += `<line x1="${pl}" x2="${W}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)" stroke-width="0.6"/><text x="${pl - 4}" y="${sy(v) + 3}" text-anchor="end">${v ? short(v) : "0"}</text>`;
   if (avgPerDay > 0) svg += `<line x1="${pl}" x2="${W}" y1="${sy(avgPerDay)}" y2="${sy(avgPerDay)}" stroke="var(--warn)" stroke-dasharray="3 3" stroke-width="1"/><text x="${W - 2}" y="${sy(avgPerDay) - 3}" text-anchor="end" style="fill:var(--warn)">jatah harian ${short(Math.round(avgPerDay))}</text>`;
   daily.forEach((v, i) => {
-    const x = pl + i * bw + bw * .15, today = isNow && i === now.getDate() - 1;
-    if (v) svg += `<rect x="${x}" y="${sy(v)}" width="${bw * .7}" height="${Math.max(1, H - pb - sy(v))}" rx="1.5" fill="${v > avgPerDay ? "var(--warn)" : "var(--accent)"}" opacity="${today ? 1 : .8}"><title>${i + 1} ${MONTHS[mo]}: ${rp(v)}</title></rect>`;
-    if (i === 0 || (i + 1) % 5 === 0 || today) svg += `<text x="${x + bw * .35}" y="${H - 5}" text-anchor="middle" style="${today ? "fill:var(--ink);font-weight:600" : ""}">${i + 1}</text>`;
+    const x = pl + i * bw + bw * .15, today = i === todayIdx;
+    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), dd = day.getDate();
+    if (v) svg += `<rect x="${x}" y="${sy(v)}" width="${bw * .7}" height="${Math.max(1, H - pb - sy(v))}" rx="1.5" fill="${v > avgPerDay ? "var(--warn)" : "var(--accent)"}" opacity="${today ? 1 : .8}"><title>${dd} ${MONTHS[day.getMonth()]}: ${rp(v)}</title></rect>`;
+    const near = todayIdx >= 0 && Math.abs(i - todayIdx) <= 1 && !today;
+    if (i === 0 || today || (dd % 5 === 0 && i > 1 && !near)) svg += `<text x="${x + bw * .35}" y="${H - 5}" text-anchor="middle" style="${today ? "fill:var(--ink);font-weight:600" : ""}">${dd}</text>`;
   });
   $("chart").innerHTML = svg + "</svg>";
 
   // riwayat
   const shown = state.who === "all" ? items : items.filter(i => i.uid === state.who);
   if (!shown.length) {
-    $("list").innerHTML = `<div class="empty">${items.length ? "Tidak ada catatan dari orang ini bulan ini." : "Belum ada catatan bulan ini. Ketik pengeluaran pertama di atas, misalnya \"makan siang 25rb\"."}</div>`;
+    $("list").innerHTML = `<div class="empty">${items.length ? "Tidak ada catatan dari orang ini di periode ini." : "Belum ada catatan di periode ini. Ketik pengeluaran pertama di atas, misalnya \"makan siang 25rb\"."}</div>`;
   } else {
     const groups = {}; shown.forEach(i => { const k = new Date(i.ts).toDateString(); (groups[k] = groups[k] || []).push(i); });
     let html = "";
@@ -418,8 +449,19 @@ $("env").addEventListener("click", e => {
   inp.addEventListener("keydown", ev => { if (ev.key === "Enter") finish(true); if (ev.key === "Escape") finish(false); });
   inp.addEventListener("blur", () => finish(true));
 });
-$("prev").onclick = () => { state.view.setMonth(state.view.getMonth() - 1); loadMonth(state.view); };
-$("next").onclick = () => { state.view.setMonth(state.view.getMonth() + 1); loadMonth(state.view); };
+$("prev").onclick = () => shiftPeriod(-1);
+$("next").onclick = () => shiftPeriod(1);
+$("paydayForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = parseInt($("payday").value, 10), msg = $("secMsg");
+  if (!(v >= 1 && v <= 28)) { msg.className = "err"; msg.textContent = "Isi tanggal gajian antara 1 sampai 28."; return; }
+  if (v === payday()) { msg.className = "err ok"; msg.textContent = "Tanggal gajian sudah " + v + "."; return; }
+  const prev = state.hh.budget._tgl_gajian;
+  state.hh.budget = { ...state.hh.budget, _tgl_gajian: v }; resetPeriod();
+  const { error } = await sb.from("households").update({ budget: state.hh.budget }).eq("id", state.hh.id);
+  if (error) { state.hh.budget._tgl_gajian = prev; resetPeriod(); msg.className = "err"; msg.textContent = "Gagal menyimpan: " + friendlyError(error); return; }
+  msg.className = "err ok"; msg.textContent = "Periode anggaran sekarang mulai tanggal " + v + ".";
+});
 $("copyCode").addEventListener("click", async () => {
   const code = state.hh.invite_code;
   try { await navigator.clipboard.writeText(code); $("secMsg").className = "err ok"; $("secMsg").textContent = "Kode undangan disalin."; }

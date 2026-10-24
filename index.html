@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer">
 <title>Dompetku</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -79,7 +79,7 @@
   <section class="people" id="people" aria-label="Pengeluaran per orang"></section>
 
   <section aria-label="Amplop anggaran">
-    <h2>Amplop bulan ini</h2>
+    <h2>Amplop periode ini</h2>
     <div class="env" id="env"></div>
   </section>
 
@@ -101,6 +101,12 @@
     </div>
     <div class="foot">Pasangan cukup daftar dengan emailnya sendiri, lalu pilih "Gabung" dan masukkan kode ini.</div>
     <div class="foot" id="memberList"></div>
+    <form class="payday" id="paydayForm">
+      <label for="payday">Tanggal gajian</label>
+      <input id="payday" type="number" min="1" max="28" inputmode="numeric" required>
+      <button class="ghost">Simpan</button>
+    </form>
+    <div class="foot">Periode anggaran mulai dari tanggal gajian sampai sehari sebelum gajian berikutnya. Isi 1–28; gajian tanggal 29–31 pakai 28.</div>
     <div class="toolbar">
       <button class="ghost" data-logout>Keluar</button>
     </div>
@@ -110,7 +116,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="config.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="config.js?v=8"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

@@ -118,3 +118,8 @@ html,body{min-height:100%}
 .invite{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .code{font-size:24px;letter-spacing:.12em;font-weight:500;user-select:all}
 .ok{color:var(--accent)}
+
+.payday{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.payday label{font-size:14px;font-weight:600}
+.payday input{width:72px;font:inherit;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.month span{min-width:150px}
