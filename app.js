@@ -637,23 +637,20 @@ $("qform").addEventListener("submit", e => { e.preventDefault(); const p = parse
 function setDay(n) {
   state.selDay = n;
   const b = $("dayBtn");
-  if (n == null) { b.textContent = "📅 Hari ini"; b.setAttribute("aria-pressed", "false"); }
-  else { const d = new Date(); d.setDate(d.getDate() + n); b.textContent = "📅 " + dayText(d.getTime()); b.setAttribute("aria-pressed", "true"); }
+  if (n == null) { b.textContent = "📅 Hari ini"; b.classList.remove("on"); $("dayPick").value = ""; }
+  else { const d = new Date(); d.setDate(d.getDate() + n); b.textContent = "📅 " + dayText(d.getTime()); b.classList.add("on"); }
   updatePreview();
 }
 $("dayPick").addEventListener("change", e => {
-  e.target.hidden = true; const v = e.target.value; if (!v) return setDay(null);
+  const v = e.target.value; if (!v) return setDay(null);
   const [y, m, d] = v.split("-").map(Number), now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const n = Math.round((new Date(y, m - 1, d) - t0) / 864e5);
-  setDay(n > 0 ? null : (n === 0 ? null : n));
+  setDay(n >= 0 ? null : n);
 });
-$("dayBtn").addEventListener("click", () => {
-  const inp = $("dayPick"), d = new Date(), pad = x => String(x).padStart(2, "0");
-  inp.max = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-  if (state.selDay != null) { setDay(null); return; }
-  if (inp.showPicker) { try { inp.showPicker(); return; } catch (_) {} }
-  inp.hidden = false; inp.focus();
-});
+// batas maksimal = hari ini, diperbarui setiap kali kalender akan dibuka
+function setDayMax() { const d = new Date(), pad = x => String(x).padStart(2, "0"); $("dayPick").max = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+["focus", "pointerdown", "touchstart"].forEach(ev => $("dayPick").addEventListener(ev, setDayMax, { passive: true }));
+setDayMax();
 $("cats").addEventListener("click", e => { const b = e.target.closest("[data-cat]"); if (!b) return; state.selCat = b.dataset.cat || null; renderChips(); updatePreview(); });
 $("presets").addEventListener("click", e => { const b = e.target.closest("[data-preset]"); if (!b) return; const [n, a, c] = PRESETS[b.dataset.preset]; const d = new Date(); if (state.selDay != null) { d.setDate(d.getDate() + state.selDay); d.setHours(12, 0, 0, 0); } addItem({ note: n, amt: a, cat: c, ts: d.getTime() }); setDay(null); });
 $("list").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b) deleteItem(b.dataset.del); });
