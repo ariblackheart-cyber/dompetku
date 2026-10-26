@@ -1,4 +1,6 @@
 "use strict";
+// daftarkan cache offline (tidak wajib; aplikasi tetap jalan tanpa ini)
+if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 /* ================= Konfigurasi ================= */
 const OTHER = "Gaya Hidup & Lainnya";
 // Kata kunci per kategori. Kata yang tidak dikenali masuk ke OTHER.
