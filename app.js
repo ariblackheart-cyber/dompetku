@@ -323,7 +323,7 @@ function takeDate(t) {
 function parse(raw) {
   let { t, day } = takeDate(" " + raw.trim() + " ");
   if (state.selDay != null) day = state.selDay;
-  t = t.replace(/\btadi\b|\bhari ini\b|(?<!makan\s)\b(pagi|siang|sore|malam)\b/ig, " ");
+  t = t.replace(/\btadi\b|\bhari ini\b/ig, " ").replace(/(\bmakan\s+)?\b(pagi|siang|sore|malam)\b/ig, (m, mk) => mk ? m : " ");
   const m = t.match(/(\d+(?:[.,]\d+)*)\s*(rb|ribu|k|jt|juta)?\b/i);
   if (!m) return null;
   const s = m[1], unit = (m[2] || "").toLowerCase();
