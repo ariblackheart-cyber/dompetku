@@ -119,7 +119,7 @@ const sb = window.supabase.createClient(DOMPETKU_CONFIG.url, DOMPETKU_CONFIG.key
 
 const state = {
   user: null, hh: null, members: [], items: new Map(), loaded: new Set(),
-  view: (() => { const d = new Date(); d.setDate(1); return d; })(), selCat: null, who: "all", channel: null
+  view: (() => { const d = new Date(); d.setDate(1); return d; })(), selCat: null, selDay: null, who: "all", channel: null
 };
 const nameOf = uid => (state.members.find(m => m.user_id === uid) || {}).display_name || "Mantan anggota";
 const colorOf = uid => { const i = state.members.findIndex(m => m.user_id === uid); return PERSON_COLORS[(i < 0 ? 5 : i) % PERSON_COLORS.length]; };
@@ -294,10 +294,36 @@ function guessCat(text) {
   }
   return best;
 }
+// Tanggal dari teks: "kemarin", "3 hari lalu", "senin", "tgl 20", "20/10". Mengembalikan selisih hari (0 = hari ini, negatif = lalu).
+const HARI = { minggu: 0, ahad: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, "jum'at": 5, sabtu: 6 };
+function takeDate(t) {
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = d => Math.round((d - today) / 864e5);
+  let m;
+  if ((m = t.match(/\b(kemarin\s+lusa)\b/i))) return { t: t.replace(m[0], " "), day: -2 };
+  if ((m = t.match(/\bkemarin\b/i))) return { t: t.replace(m[0], " "), day: -1 };
+  if ((m = t.match(/\b(\d{1,2})\s*(hari|hr|minggu|mgg)\s*(yang\s*)?(lalu|lalu|kemarin)\b/i))) return { t: t.replace(m[0], " "), day: -(+m[1]) * (/^m/i.test(m[2]) ? 7 : 1) };
+  if ((m = t.match(/\b(tgl|tanggal)\.?\s*(\d{1,2})\b/i)) || (m = t.match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/))) {
+    let dd, mm, yy;
+    if (/^t/i.test(m[1])) { dd = +m[2]; mm = today.getMonth(); yy = today.getFullYear(); }
+    else { dd = +m[1]; mm = +m[2] - 1; yy = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : today.getFullYear(); }
+    if (dd >= 1 && dd <= 31 && mm >= 0 && mm <= 11) {
+      let d = new Date(yy, mm, dd);
+      if (d > today && !m[3]) d = /^t/i.test(m[1]) ? new Date(yy, mm - 1, dd) : new Date(yy - 1, mm, dd);
+      if (d <= today) return { t: t.replace(m[0], " "), day: diff(d) };
+    }
+  }
+  if ((m = t.match(/\b(hari\s+)?(minggu|ahad|senin|selasa|rabu|kamis|jum'?at|sabtu)(\s+(kemarin|lalu))?\b/i))) {
+    const w = HARI[m[2].toLowerCase().replace("jum'at", "jumat")]; let back = (today.getDay() - w + 7) % 7;
+    if (m[3] && back === 0) back = 7;
+    return { t: t.replace(m[0], " "), day: -back };
+  }
+  return { t, day: 0 };
+}
 function parse(raw) {
-  let t = " " + raw.trim() + " ", day = 0;
-  if (/\bkemarin\b/i.test(t)) { day = -1; t = t.replace(/\bkemarin\b/ig, " "); }
-  t = t.replace(/\b(tadi|pagi|siang|sore|malam|hari ini)\b/ig, " ");
+  let { t, day } = takeDate(" " + raw.trim() + " ");
+  if (state.selDay != null) day = state.selDay;
+  t = t.replace(/\btadi\b|\bhari ini\b|(?<!makan\s)\b(pagi|siang|sore|malam)\b/ig, " ");
   const m = t.match(/(\d+(?:[.,]\d+)*)\s*(rb|ribu|k|jt|juta)?\b/i);
   if (!m) return null;
   const s = m[1], unit = (m[2] || "").toLowerCase();
@@ -307,7 +333,12 @@ function parse(raw) {
   if (!n || n <= 0 || n >= 1e12) return null;
   const note = (t.replace(m[0], " ").replace(/\s+/g, " ").trim() || "Pengeluaran").slice(0, 80);
   const d = new Date(); d.setDate(d.getDate() + day); if (day) d.setHours(12, 0, 0, 0);
-  return { amt: Math.round(n), note: note.charAt(0).toUpperCase() + note.slice(1), cat: state.selCat || guessCat(note), ts: d.getTime() };
+  return { amt: Math.round(n), note: note.charAt(0).toUpperCase() + note.slice(1), cat: state.selCat || guessCat(note), ts: d.getTime(), day };
+}
+function dayText(ts) {
+  const d = new Date(ts), now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const n = Math.round((t0 - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+  return n === 0 ? "hari ini" : n === 1 ? "kemarin" : `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}${d.getFullYear() !== now.getFullYear() ? " " + d.getFullYear() : ""}`;
 }
 async function addItem(it) {
   const tmp = "tmp-" + Date.now() + Math.random();
@@ -317,7 +348,7 @@ async function addItem(it) {
     .select("id,user_id,amount,note,category,spent_at").single();
   state.items.delete(tmp);
   if (error) { toast("Gagal menyimpan \"" + it.note + "\": " + friendlyError(error)); }
-  else { state.items.set(data.id, fromRow(data)); toast(`${icon(it.cat)} ${it.note} ${rp(it.amt)} tersimpan`, () => deleteItem(data.id)); }
+  else { state.items.set(data.id, fromRow(data)); toast(`${icon(it.cat)} ${it.note} ${rp(it.amt)} tersimpan${dayText(it.ts) === "hari ini" ? "" : " untuk " + dayText(it.ts)}`, () => deleteItem(data.id)); }
   render();
 }
 /* notifikasi kecil dengan tombol urungkan */
@@ -531,10 +562,9 @@ function renderChips() {
 function updatePreview() {
   const p = parse($("q").value);
   $("add").disabled = !p;
-  if (!$("q").value.trim()) { $("preview").textContent = 'Ketik nama dan nominal. Bisa pakai rb, k, jt, atau "kemarin".'; return; }
+  if (!$("q").value.trim()) { $("preview").textContent = 'Ketik nama dan nominal. Bisa pakai rb, k, jt. Lupa catat? Tambahkan "kemarin", "senin", "3 hari lalu", atau "tgl 20".'; return; }
   if (!p) { $("preview").textContent = "Tambahkan nominal, misalnya 25rb atau 25000."; return; }
-  const today = new Date().toDateString() === new Date(p.ts).toDateString();
-  $("preview").innerHTML = `${icon(p.cat)} <b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${esc(p.cat)} · ${today ? "hari ini" : "kemarin"}`;
+  $("preview").innerHTML = `${icon(p.cat)} <b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${esc(p.cat)} · <b>${dayText(p.ts)}</b>`;
 }
 
 /* ================= Ekspor Excel ================= */
@@ -602,9 +632,30 @@ $("toastUndo").addEventListener("click", () => { const u = toastUndo; $("toast")
 $("exportPeriod").addEventListener("click", () => exportExcel("period"));
 $("exportAll").addEventListener("click", () => exportExcel("all"));
 $("q").addEventListener("input", updatePreview);
-$("qform").addEventListener("submit", e => { e.preventDefault(); const p = parse($("q").value); if (!p) return; $("q").value = ""; updatePreview(); addItem(p); });
+$("qform").addEventListener("submit", e => { e.preventDefault(); const p = parse($("q").value); if (!p) return; $("q").value = ""; setDay(null); addItem(p); });
+// pilih tanggal lewat kalender
+function setDay(n) {
+  state.selDay = n;
+  const b = $("dayBtn");
+  if (n == null) { b.textContent = "📅 Hari ini"; b.setAttribute("aria-pressed", "false"); }
+  else { const d = new Date(); d.setDate(d.getDate() + n); b.textContent = "📅 " + dayText(d.getTime()); b.setAttribute("aria-pressed", "true"); }
+  updatePreview();
+}
+$("dayPick").addEventListener("change", e => {
+  e.target.hidden = true; const v = e.target.value; if (!v) return setDay(null);
+  const [y, m, d] = v.split("-").map(Number), now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const n = Math.round((new Date(y, m - 1, d) - t0) / 864e5);
+  setDay(n > 0 ? null : (n === 0 ? null : n));
+});
+$("dayBtn").addEventListener("click", () => {
+  const inp = $("dayPick"), d = new Date(), pad = x => String(x).padStart(2, "0");
+  inp.max = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  if (state.selDay != null) { setDay(null); return; }
+  if (inp.showPicker) { try { inp.showPicker(); return; } catch (_) {} }
+  inp.hidden = false; inp.focus();
+});
 $("cats").addEventListener("click", e => { const b = e.target.closest("[data-cat]"); if (!b) return; state.selCat = b.dataset.cat || null; renderChips(); updatePreview(); });
-$("presets").addEventListener("click", e => { const b = e.target.closest("[data-preset]"); if (!b) return; const [n, a, c] = PRESETS[b.dataset.preset]; addItem({ note: n, amt: a, cat: c, ts: Date.now() }); });
+$("presets").addEventListener("click", e => { const b = e.target.closest("[data-preset]"); if (!b) return; const [n, a, c] = PRESETS[b.dataset.preset]; const d = new Date(); if (state.selDay != null) { d.setDate(d.getDate() + state.selDay); d.setHours(12, 0, 0, 0); } addItem({ note: n, amt: a, cat: c, ts: d.getTime() }); setDay(null); });
 $("list").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b) deleteItem(b.dataset.del); });
 $("whoFilter").addEventListener("click", e => { const b = e.target.closest("[data-who]"); if (!b) return; state.who = b.dataset.who; renderHousehold(); render(); });
 $("env").addEventListener("click", e => {
