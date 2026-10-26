@@ -6,16 +6,19 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ozuyxymtvtonivohxuoj.supabase.co wss://ozuyxymtvtonivohxuoj.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Dompetku</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e6b5a'/%3E%3Crect x='9' y='17' width='46' height='34' rx='8' fill='%23fbfcf9'/%3E%3Crect x='33' y='28' width='22' height='13' rx='6.5' fill='%23d6ebe4'/%3E%3Ccircle cx='41' cy='34.5' r='3.8' fill='%230e6b5a'/%3E%3Ccircle cx='48.5' cy='34.5' r='3.8' fill='%23e9a23b'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0e6b5a">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
-<div class="lock" id="loading"><div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div><p>Memuat…</p></div>
+<div class="lock" id="loading"><div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="40" rx="10" class="w"/><path d="M14 14l24-7 4 7" class="f"/><rect x="34" y="28" width="24" height="16" rx="8" class="p"/><circle cx="43" cy="36" r="4.2" class="c1"/><circle cx="51" cy="36" r="4.2" class="c2"/></svg><div><div class="label">Catatan pengeluaran</div><h1>Dompetku</h1></div></div><p>Memuat…</p></div>
 
 <!-- Masuk / daftar -->
 <section class="lock" id="authScreen" hidden>
-  <div><div class="label">Catatan pengeluaran bersama</div><h1>Dompetku</h1></div>
+  <div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="40" rx="10" class="w"/><path d="M14 14l24-7 4 7" class="f"/><rect x="34" y="28" width="24" height="16" rx="8" class="p"/><circle cx="43" cy="36" r="4.2" class="c1"/><circle cx="51" cy="36" r="4.2" class="c2"/></svg><div><div class="label">Catatan pengeluaran bersama</div><h1>Dompetku</h1></div></div>
+  <p>Satu dompet untuk berdua: catat cepat, anggaran per amplop, dan langsung tersinkron dengan pasangan.</p>
   <div class="tabs" role="tablist">
     <button class="tab" id="tabLogin" role="tab" aria-selected="true">Masuk</button>
     <button class="tab" id="tabSignup" role="tab" aria-selected="false">Daftar</button>
@@ -32,7 +35,7 @@
 
 <!-- Atur kata sandi baru (dari email reset) -->
 <form class="lock" id="resetScreen" hidden>
-  <div><div class="label">Dompetku</div><h1>Kata sandi baru</h1></div>
+  <div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="40" rx="10" class="w"/><path d="M14 14l24-7 4 7" class="f"/><rect x="34" y="28" width="24" height="16" rx="8" class="p"/><circle cx="43" cy="36" r="4.2" class="c1"/><circle cx="51" cy="36" r="4.2" class="c2"/></svg><div><div class="label">Dompetku</div><h1>Kata sandi baru</h1></div></div>
   <div class="field"><label for="newPw">Kata sandi baru</label><input id="newPw" type="password" autocomplete="new-password" minlength="8" required></div>
   <div class="field"><label for="newPw2">Ulangi kata sandi</label><input id="newPw2" type="password" autocomplete="new-password" required></div>
   <div class="err" id="resetErr" role="alert"></div>
@@ -41,7 +44,7 @@
 
 <!-- Buat / gabung rumah tangga -->
 <section class="lock" id="hhScreen" hidden>
-  <div><div class="label">Satu langkah lagi</div><h1>Rumah tangga</h1></div>
+  <div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="40" rx="10" class="w"/><path d="M14 14l24-7 4 7" class="f"/><rect x="34" y="28" width="24" height="16" rx="8" class="p"/><circle cx="43" cy="36" r="4.2" class="c1"/><circle cx="51" cy="36" r="4.2" class="c2"/></svg><div><div class="label">Satu langkah lagi</div><h1>Rumah tangga</h1></div></div>
   <p>Satu rumah tangga berisi kamu dan pasangan. Catatan dan anggarannya dipakai bersama.</p>
   <div class="field"><label for="displayName">Nama panggilanmu</label><input id="displayName" maxlength="30" placeholder="mis. Ayah, Bunda, Ari" required></div>
   <form class="panel" id="createForm">
@@ -59,80 +62,108 @@
 </section>
 
 <!-- Aplikasi -->
-<div class="wrap" id="app" hidden>
-  <header>
-    <div><div class="label" id="hhLabel">Catatan pengeluaran</div><h1>Dompetku</h1></div>
-    <div class="month"><button id="prev" aria-label="Bulan sebelumnya">‹</button><span id="mlabel"></span><button id="next" aria-label="Bulan berikutnya">›</button></div>
+<div id="app" hidden>
+  <header class="appbar">
+    <div class="appbar-in">
+      <div class="brand small"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="40" rx="10" class="w"/><path d="M14 14l24-7 4 7" class="f"/><rect x="34" y="28" width="24" height="16" rx="8" class="p"/><circle cx="43" cy="36" r="4.2" class="c1"/><circle cx="51" cy="36" r="4.2" class="c2"/></svg><div><h1>Dompetku</h1><div class="label" id="hhLabel">Catatan pengeluaran</div></div></div>
+      <div class="month"><button id="prev" aria-label="Periode sebelumnya">‹</button><span id="mlabel"></span><button id="next" aria-label="Periode berikutnya">›</button></div>
+    </div>
   </header>
 
-  <section class="quick" aria-label="Catat cepat">
-    <form class="qrow" id="qform">
-      <input id="q" autocomplete="off" placeholder="mis. kopi 25rb, bensin 50rb kemarin" aria-label="Catat pengeluaran">
-      <button class="btn" id="add" disabled>Catat</button>
-    </form>
-    <div class="preview" id="preview"></div>
-    <div class="chips" id="cats" aria-label="Kategori"></div>
-    <div class="chips" id="presets" aria-label="Pengeluaran rutin"></div>
-  </section>
+  <main class="wrap">
+    <!-- ===== BERANDA ===== -->
+    <section class="page" data-page="home">
+      <section class="summary" id="summary" aria-label="Ringkasan periode"></section>
 
-  <section class="summary" id="summary"></section>
-  <section class="people" id="people" aria-label="Pengeluaran per orang"></section>
+      <section class="quick" aria-label="Catat cepat">
+        <div class="quick-head"><h2>Catat pengeluaran</h2><span class="foot">ketik nama + nominal</span></div>
+        <form class="qrow" id="qform">
+          <input id="q" autocomplete="off" placeholder="mis. kopi 25rb, bensin 50rb kemarin" aria-label="Catat pengeluaran">
+          <button class="btn" id="add" disabled>Catat</button>
+        </form>
+        <div class="preview" id="preview"></div>
+        <div class="chips cats" id="cats" aria-label="Kategori"></div>
+        <div class="presets-wrap"><span class="foot">Sekali ketuk:</span><div class="chips" id="presets" aria-label="Pengeluaran rutin"></div></div>
+      </section>
 
-  <section aria-label="Amplop anggaran">
-    <h2>Amplop periode ini</h2>
-    <div class="env" id="env"></div>
-  </section>
+      <section class="people" id="people" aria-label="Pengeluaran per orang"></section>
 
-  <section aria-label="Grafik harian">
-    <h2>Pengeluaran per hari</h2>
-    <div class="chart" id="chart"></div>
-  </section>
+      <section class="card" aria-label="Amplop anggaran">
+        <div class="sec-head"><h2>Amplop periode ini</h2><span class="foot">ketuk angka anggaran untuk mengubah</span></div>
+        <div class="env" id="env"></div>
+      </section>
+    </section>
 
-  <section aria-label="Laporan periode">
-    <h2>Laporan</h2>
-    <div class="report" id="report"></div>
-  </section>
+    <!-- ===== RIWAYAT ===== -->
+    <section class="page" data-page="list" hidden>
+      <section aria-label="Riwayat">
+        <div class="listhead"><h2>Riwayat</h2><div class="chips" id="whoFilter"></div></div>
+        <div class="list" id="list"></div>
+      </section>
+    </section>
 
-  <section class="panel" aria-label="Unduh Excel">
-    <h2 style="margin:0">Unduh Excel</h2>
-    <div class="toolbar">
-      <button class="ghost" id="exportPeriod">Periode ini</button>
-      <button class="ghost" id="exportAll">Semua catatan</button>
-    </div>
-    <div class="foot">Berisi daftar catatan, ringkasan per kategori, dan per orang. Bisa dibuka di Excel, Google Sheets, atau WPS.</div>
-    <div class="err" id="exportMsg" role="status"></div>
-  </section>
+    <!-- ===== LAPORAN ===== -->
+    <section class="page" data-page="report" hidden>
+      <section class="card" aria-label="Grafik harian">
+        <h2>Pengeluaran per hari</h2>
+        <div class="chart" id="chart"></div>
+      </section>
+      <section aria-label="Laporan periode">
+        <h2>Laporan</h2>
+        <div class="report" id="report"></div>
+      </section>
+      <section class="card" aria-label="Unduh Excel">
+        <h2>Unduh Excel</h2>
+        <div class="toolbar">
+          <button class="ghost" id="exportPeriod">Periode ini</button>
+          <button class="ghost" id="exportAll">Semua catatan</button>
+        </div>
+        <div class="foot">Berisi daftar catatan, ringkasan per kategori, dan per orang. Bisa dibuka di Excel, Google Sheets, atau WPS.</div>
+        <div class="err" id="exportMsg" role="status"></div>
+      </section>
+    </section>
 
-  <section aria-label="Riwayat">
-    <div class="listhead"><h2>Riwayat</h2><div class="chips" id="whoFilter"></div></div>
-    <div class="list" id="list"></div>
-  </section>
+    <!-- ===== RUMAH ===== -->
+    <section class="page" data-page="home2" hidden>
+      <section class="card" aria-label="Undang pasangan">
+        <h2>Undang pasangan</h2>
+        <div class="invite">
+          <div><div class="label">Kode undangan</div><div class="code num" id="inviteCode">…</div></div>
+          <div class="toolbar"><button class="ghost" id="copyCode">Salin</button><button class="ghost" id="newCode">Buat kode baru</button></div>
+        </div>
+        <div class="foot">Pasangan cukup daftar dengan emailnya sendiri, lalu pilih "Gabung" dan masukkan kode ini.</div>
+        <div class="foot" id="memberList"></div>
+      </section>
+      <section class="card" aria-label="Tanggal gajian">
+        <h2>Tanggal gajian</h2>
+        <form class="payday" id="paydayForm">
+          <label for="payday">Gajian setiap tanggal</label>
+          <input id="payday" type="number" min="1" max="28" inputmode="numeric" required>
+          <button class="ghost">Simpan</button>
+        </form>
+        <div class="foot">Periode anggaran mulai dari tanggal gajian sampai sehari sebelum gajian berikutnya. Isi 1–28; gajian tanggal 29–31 pakai 28.</div>
+      </section>
+      <section class="card">
+        <div class="err" id="secMsg" role="status"></div>
+        <div class="foot" id="syncState">Menyambungkan…</div>
+        <div class="toolbar"><button class="ghost" data-logout>Keluar</button></div>
+      </section>
+    </section>
+  </main>
 
-  <section class="panel" aria-label="Akun dan rumah tangga">
-    <h2 style="margin:0">Rumah tangga</h2>
-    <div class="invite">
-      <div><div class="label">Kode undangan untuk pasangan</div><div class="code num" id="inviteCode">…</div></div>
-      <div class="toolbar"><button class="ghost" id="copyCode">Salin</button><button class="ghost" id="newCode">Buat kode baru</button></div>
-    </div>
-    <div class="foot">Pasangan cukup daftar dengan emailnya sendiri, lalu pilih "Gabung" dan masukkan kode ini.</div>
-    <div class="foot" id="memberList"></div>
-    <form class="payday" id="paydayForm">
-      <label for="payday">Tanggal gajian</label>
-      <input id="payday" type="number" min="1" max="28" inputmode="numeric" required>
-      <button class="ghost">Simpan</button>
-    </form>
-    <div class="foot">Periode anggaran mulai dari tanggal gajian sampai sehari sebelum gajian berikutnya. Isi 1–28; gajian tanggal 29–31 pakai 28.</div>
-    <div class="toolbar">
-      <button class="ghost" data-logout>Keluar</button>
-    </div>
-    <div class="err" id="secMsg" role="status"></div>
-    <div class="foot" id="syncState">Menyambungkan…</div>
-  </section>
+  <nav class="bottomnav" aria-label="Menu">
+    <button class="nav" data-tab="home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Beranda</span></button>
+    <button class="nav" data-tab="list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Riwayat</span></button>
+    <button class="nav" data-tab="report"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Laporan</span></button>
+    <button class="nav" data-tab="home2"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.6"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 14.6c.8-.4 1.6-.6 2.5-.6 2.8 0 5 2.2 5 5"/></svg><span>Rumah</span></button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button id="toastUndo">Urungkan</button></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="config.js?v=8"></script>
-<script src="xlsx.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="config.js?v=9"></script>
+<script src="xlsx.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

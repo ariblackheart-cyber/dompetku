@@ -55,6 +55,9 @@ const CATS = [
     "hobi","mainan","shopee","tokopedia","lazada","tiktok shop","rokok","pijat","urut","laundry","cuci baju","potong kuku"] }
 ];
 const DEFAULT_BUDGET = { "Dapur & Rumah": 2200000, "Transport": 500000, "Tagihan & Cicilan": 800000, "Pendidikan": 0, "Kesehatan": 0, "Hadiah & Sumbangan": 0, "Tabungan & Investasi": 0, [OTHER]: 500000 };
+const ICONS = { "Dapur & Rumah": "🍳", "Transport": "🛵", "Tagihan & Cicilan": "🧾", "Pendidikan": "🎓", "Kesehatan": "💊", "Hadiah & Sumbangan": "🎁", "Tabungan & Investasi": "🌱", [OTHER]: "🎉" };
+const icon = k => ICONS[k] || "💸";
+const WALLET = `<svg class="wm" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="40" rx="10" class="w"/><rect x="34" y="28" width="24" height="16" rx="8" class="p"/><circle cx="43" cy="36" r="4.2" class="c"/><circle cx="51" cy="36" r="4.2" class="c"/></svg>`;
 const PRESETS = [["Parkir", 2000, "Transport"], ["Kopi", 18000, OTHER], ["Makan siang", 25000, "Dapur & Rumah"], ["Bensin", 30000, "Transport"]];
 const PERSON_COLORS = ["#0e8a72", "#c0567f", "#3d7bd9", "#b7791f", "#7a5cc7", "#6b7a76"];
 const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -240,7 +243,7 @@ async function loadMonth(d, force) {
   const { data, error } = await sb.from("expenses").select("id,user_id,amount,note,category,spent_at")
     .eq("household_id", state.hh.id).gte("spent_at", from.toISOString()).lt("spent_at", to.toISOString())
     .order("spent_at", { ascending: false }).limit(10000);
-  if (error) { $("secMsg").className = "err"; $("secMsg").textContent = friendlyError(error); render(); return; }
+  if (error) { toast(friendlyError(error)); render(); return; }
   for (const [id, it] of state.items) if (it.ts >= +from && it.ts < +to && !String(id).startsWith("tmp-")) state.items.delete(id);
   data.forEach(r => state.items.set(r.id, fromRow(r)));
   for (let st = from; st < to; st = shiftStart(st, 1)) state.loaded.add(monthKey(st));
@@ -313,21 +316,27 @@ async function addItem(it) {
     .insert({ household_id: state.hh.id, user_id: state.user.id, amount: it.amt, note: it.note, category: it.cat, spent_at: new Date(it.ts).toISOString() })
     .select("id,user_id,amount,note,category,spent_at").single();
   state.items.delete(tmp);
-  if (error) { $("secMsg").textContent = "Gagal menyimpan \"" + it.note + "\": " + friendlyError(error); }
-  else state.items.set(data.id, fromRow(data));
+  if (error) { toast("Gagal menyimpan \"" + it.note + "\": " + friendlyError(error)); }
+  else { state.items.set(data.id, fromRow(data)); toast(`${icon(it.cat)} ${it.note} ${rp(it.amt)} tersimpan`, () => deleteItem(data.id)); }
   render();
+}
+/* notifikasi kecil dengan tombol urungkan */
+let toastTimer = null, toastUndo = null;
+function toast(text, undo) {
+  $("toastText").textContent = text; toastUndo = undo || null; $("toastUndo").hidden = !undo; $("toast").hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; toastUndo = null; }, undo ? 6000 : 4000);
 }
 async function deleteItem(id) {
   const old = state.items.get(id); if (!old || String(id).startsWith("tmp-")) return;
   state.items.delete(id); render();
   const { error } = await sb.from("expenses").delete().eq("id", id);
-  if (error) { state.items.set(id, old); render(); $("secMsg").textContent = "Gagal menghapus: " + friendlyError(error); }
+  if (error) { state.items.set(id, old); render(); toast("Gagal menghapus: " + friendlyError(error)); }
 }
 async function saveBudget(k, v) {
   const prev = state.hh.budget[k];
   state.hh.budget = { ...state.hh.budget, [k]: v }; render();
   const { error } = await sb.from("households").update({ budget: state.hh.budget }).eq("id", state.hh.id);
-  if (error) { state.hh.budget[k] = prev; render(); $("secMsg").textContent = "Gagal menyimpan anggaran: " + friendlyError(error); }
+  if (error) { state.hh.budget[k] = prev; render(); toast("Gagal menyimpan anggaran: " + friendlyError(error)); }
 }
 
 function resetPeriod() {
@@ -373,9 +382,13 @@ function render() {
   const perDay = daysLeft > 0 ? left / daysLeft : 0;
   const neg = v => v < 0 ? "−" + rp(-v) : rp(v);
 
+  const usedPct = totalBudget ? Math.min(100, spent / totalBudget * 100) : 0, dayPct = isNow ? (todayIdx + 1) / dim * 100 : (start > now ? 0 : 100);
+  const meter = totalBudget ? `<div class="meter" aria-label="Terpakai ${Math.round(spent / totalBudget * 100)}% anggaran, hari ke-${isNow ? todayIdx + 1 : dim} dari ${dim}">
+      <div class="track"><span class="fill" style="width:${usedPct}%"></span>${isNow ? `<span class="today" style="left:${dayPct}%" title="hari ini"></span>` : ""}</div>
+      <div class="legend"><span>Terpakai ${Math.round(spent / totalBudget * 100)}% anggaran</span><span>${isNow ? `hari ke-${todayIdx + 1} dari ${dim}` : `${dim} hari`}</span></div></div>` : "";
   const safe = daysLeft > 0
-    ? `<div class="safe${left < 0 ? " over" : ""}"><div class="label">Aman dibelanjakan per hari (berdua)</div><div class="big num">${left < 0 ? "Rp0" : rp(perDay)}</div><small>${left < 0 ? `Lewat anggaran ${rp(-left)}` : `untuk ${daysLeft} hari ${untilText}`}</small></div>`
-    : `<div class="safe${left < 0 ? " over" : ""}"><div class="label">Hasil periode ini</div><div class="big num">${neg(left)}</div><small>${left < 0 ? "melewati anggaran" : "sisa dari anggaran"}</small></div>`;
+    ? `<div class="safe${left < 0 ? " over" : ""}">${WALLET}<div class="label">Aman dibelanjakan per hari (berdua)</div><div class="big num">${left < 0 ? "Rp0" : rp(perDay)}</div><small>${left < 0 ? `Lewat anggaran ${rp(-left)}` : `untuk ${daysLeft} hari ${untilText}`}</small>${meter}</div>`
+    : `<div class="safe${left < 0 ? " over" : ""}">${WALLET}<div class="label">Hasil periode ini</div><div class="big num">${neg(left)}</div><small>${left < 0 ? "melewati anggaran" : "sisa dari anggaran"}</small>${meter}</div>`;
   $("summary").innerHTML = safe +
     `<div><div class="label">Terpakai</div><div class="big num">${rp(spent)}</div></div>` +
     `<div><div class="label">Sisa anggaran</div><div class="big num" style="color:${left < 0 ? "var(--bad)" : "inherit"}">${neg(left)}</div></div>`;
@@ -394,9 +407,10 @@ function render() {
     const b = Number(budget[c.k] || 0), u = byCat[c.k] || 0, p = b ? u / b : (u ? 1.01 : 0);
     const cls = p > 1 ? "bad" : p > Math.min(1, elapsed + .15) && p > .6 ? "warn" : "";
     const pill = p > 1 ? `<span class="pill bad">lewat ${rp(u - b)}</span>` : cls === "warn" ? `<span class="pill warn">${Math.round(p * 100)}%</span>` : "";
-    return `<div class="erow"><div class="name">${esc(c.k)}${pill}</div>
+    const rest = b - u, restTxt = !b ? (u ? "tanpa anggaran" : "–") : rest >= 0 ? "sisa " + rp(rest) : "lewat " + rp(-rest);
+    return `<div class="erow"><span class="ic" aria-hidden="true">${icon(c.k)}</span><div class="name">${esc(c.k)}${pill}</div>
       <div class="amt num"><span>${rp(u)}</span> / <button data-edit="${esc(c.k)}" aria-label="Ubah anggaran ${esc(c.k)}">${rp(b)}</button></div>
-      <div class="bar ${cls}"><i style="width:${Math.min(100, p * 100)}%"></i></div></div>`;
+      <div class="left"><div class="bar ${cls}"><i style="width:${Math.min(100, p * 100)}%"></i></div><span class="rest num${rest < 0 && b ? " bad" : ""}">${restTxt}</span></div></div>`;
   }).join("");
 
   // grafik
@@ -431,7 +445,7 @@ function render() {
       html += `<div class="day"><span>${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</span><span class="num">${rp(tot)}</span></div>`;
       g.forEach(i => {
         const pending = String(i.id).startsWith("tmp-");
-        html += `<div class="item"${pending ? ' style="opacity:.55"' : ""}><div class="note">${esc(i.note)}<div class="cat">${esc(i.cat)} · <span class="by"><span class="dot" style="background:${colorOf(i.uid)}"></span>${esc(i.uid === state.user.id ? "Saya" : nameOf(i.uid))}</span>${pending ? " · menyimpan…" : ""}</div></div><div class="num">${rp(i.amt)}</div><button class="del" data-del="${esc(i.id)}" aria-label="Hapus ${esc(i.note)}"${pending ? " disabled" : ""}>×</button></div>`;
+        html += `<div class="item"${pending ? ' style="opacity:.55"' : ""}><span class="ic" aria-hidden="true">${icon(i.cat)}</span><div class="note">${esc(i.note)}<div class="cat">${esc(i.cat)} · <span class="by"><span class="dot" style="background:${colorOf(i.uid)}"></span>${esc(i.uid === state.user.id ? "Saya" : nameOf(i.uid))}</span>${pending ? " · menyimpan…" : ""}</div></div><div class="num">${rp(i.amt)}</div><button class="del" data-del="${esc(i.id)}" aria-label="Hapus ${esc(i.note)}"${pending ? " disabled" : ""}>×</button></div>`;
       });
     }
     $("list").innerHTML = html;
@@ -511,7 +525,7 @@ function renderReport(start, items, spent, totalBudget, todayIdx) {
 
 function renderChips() {
   $("cats").innerHTML = `<button class="chip" data-cat="" aria-pressed="${state.selCat === null}">Otomatis</button>` +
-    CATS.map(c => `<button class="chip" data-cat="${esc(c.k)}" aria-pressed="${state.selCat === c.k}">${esc(c.k)}</button>`).join("");
+    CATS.map(c => `<button class="chip" data-cat="${esc(c.k)}" aria-pressed="${state.selCat === c.k}">${icon(c.k)} ${esc(c.k)}</button>`).join("");
   $("presets").innerHTML = PRESETS.map((p, i) => `<button class="chip preset" data-preset="${i}">+ ${p[0]} ${short(p[1])}</button>`).join("");
 }
 function updatePreview() {
@@ -520,7 +534,7 @@ function updatePreview() {
   if (!$("q").value.trim()) { $("preview").textContent = 'Ketik nama dan nominal. Bisa pakai rb, k, jt, atau "kemarin".'; return; }
   if (!p) { $("preview").textContent = "Tambahkan nominal, misalnya 25rb atau 25000."; return; }
   const today = new Date().toDateString() === new Date(p.ts).toDateString();
-  $("preview").innerHTML = `<b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${esc(p.cat)} · ${today ? "hari ini" : "kemarin"}`;
+  $("preview").innerHTML = `${icon(p.cat)} <b>${esc(p.note)}</b> · <b class="num">${rp(p.amt)}</b> · ${esc(p.cat)} · ${today ? "hari ini" : "kemarin"}`;
 }
 
 /* ================= Ekspor Excel ================= */
@@ -575,6 +589,14 @@ async function exportExcel(scope) {
     msg.className = "err ok"; msg.textContent = "File Excel diunduh.";
   } catch (er) { msg.className = "err"; msg.textContent = "Gagal membuat file: " + friendlyError(er); }
 }
+
+/* ================= Menu ================= */
+document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-tab]").forEach(x => x === b ? x.setAttribute("aria-current", "page") : x.removeAttribute("aria-current"));
+  document.querySelectorAll("[data-page]").forEach(pg => pg.hidden = pg.dataset.page !== b.dataset.tab);
+  window.scrollTo({ top: 0 });
+}));
+$("toastUndo").addEventListener("click", () => { const u = toastUndo; $("toast").hidden = true; toastUndo = null; if (u) { u(); toast("Catatan dibatalkan."); } });
 
 /* ================= Interaksi ================= */
 $("exportPeriod").addEventListener("click", () => exportExcel("period"));
